@@ -694,7 +694,7 @@ const Replayline = () => {
                   transform: selectedContents[index] ? 'scale(0.95)' : 'scale(1)',
                   transition: 'transform 0.1s ease-in-out, background-color 0.1s ease-in-out',
                 }}
-                onClick={() => handleContentChange(index)}
+                onClick={() => handleContentChange(content)}
               >
                 {content}
               </button>
