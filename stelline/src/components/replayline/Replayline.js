@@ -8,6 +8,7 @@ import { VariableSizeList as List } from 'react-window';
 
 const MEMBERS = ['칸나', '유니', '히나', '시로', '리제', '타비', '부키', '린', '나나', '리코'];
 const CONTENTS = ['종합게임', '공포게임', '노래', '서버', '기념일', '내부 합방', '외부 합방', '최초 공개', '팬게임', '월드컵', '특별 컨텐츠', '대회']
+const MEMBERS_ONE = ['칸', '유', '히', '시', '맂', '타', '부', '린', '나', '맄'];
 
 const COLORS = [
   '#373584',
@@ -340,6 +341,7 @@ const Replayline = () => {
       return acc;
     }, {}));
     setFilterMemberOperation('AND')
+    setFilterContentOperation('AND')
     sessionStorage.setItem('searchText', '');
     sessionStorage.setItem('selectedMembers', JSON.stringify(Array(10).fill(0)));
     sessionStorage.setItem('selectedChannels', JSON.stringify(Array(10).fill(1)));
@@ -392,7 +394,22 @@ const Replayline = () => {
           타임 라인
         </button>
 
-        <h2>내비게이션</h2>
+        <h2
+          style={{
+            fontFamily: "'Noto Sans', sans-serif", // 깔끔한 폰트 사용
+            fontSize: '20px', // 제목 크기 지정
+            fontWeight: '700', // 굵게 강조
+            textAlign: 'center', // 텍스트 가운데 정렬
+            color: '#333', // 텍스트 색상
+            backgroundColor: '#f0f0f0', // 배경색 추가
+            padding: '10px', // 패딩으로 여백 추가
+            borderRadius: '8px', // 둥근 모서리로 부드러운 느낌
+            marginBottom: '20px', // 아래쪽 여백 추가
+          }}
+        >
+          내비게이션
+        </h2>
+
 
         <input
           type="text"
@@ -521,12 +538,53 @@ const Replayline = () => {
                                   e.target.tooltipElement = null;
                                   e.target.updateTooltipPosition = null;
                                 }
+                                const existingTooltips = document.querySelectorAll('.custom-tooltip');
+                                existingTooltips.forEach((tooltip) => {
+                                  if (tooltip.parentNode) {
+                                    tooltip.parentNode.removeChild(tooltip);
+                                  }
+                                });
                               }}
-                              style={getGradientStyle(groupedByYearMonthDay[year][month][day].reduce((acc, event) => {
-                                return acc.map((value, index) => value || event.members[index]);
-                              }, Array(MEMBERS.length).fill(0)))}
                             >
-                              {day}일
+                              {day}일<br />
+                              {
+                                (() => {
+                                  // 0. 10개의 배열을 만들어 초기화합니다.
+                                  const memberPresenceArray = Array(10).fill(0);
+
+                                  // 1. 해당 날짜의 이벤트를 순회합니다.
+                                  groupedByYearMonthDay[year][month][day].forEach((event) => {
+                                    // 2. members 배열을 순회하며 1인 경우 갱신합니다.
+                                    event.members.forEach((member, idx) => {
+                                      if (member === 1) {
+                                        memberPresenceArray[idx] = 1;
+                                      }
+                                    });
+
+                                    // 3. event의 channel이 특정 값이라면 해당 인덱스를 갱신합니다.
+                                    if (event.channel >= 0 && event.channel < memberPresenceArray.length) {
+                                      memberPresenceArray[event.channel] = 1;
+                                    }
+                                  });
+
+                                  // 4. 배열을 순회하며 각 값에 대해 한 글자 출력을 생성합니다.
+                                  return memberPresenceArray.map((member, memberIndex) =>
+                                    member === 1 ? (
+                                      <span
+                                        key={memberIndex}
+                                        style={{
+                                          color: COLORS[memberIndex], // 멤버에 해당하는 색상 적용
+                                          fontWeight: 'bold',
+                                          marginLeft: '4px',
+                                        }}
+                                      >
+                                        {MEMBERS_ONE[memberIndex]}
+                                      </span>
+                                    ) : null
+                                  );
+                                })()
+                              }
+
                             </li>
                           ))}
                         </ul>
@@ -538,133 +596,160 @@ const Replayline = () => {
             </li>
           ))}
         </ul>
-        <button onClick={handleResetFilters} style={{ display: 'block', margin: '0 auto', marginBottom: '10px' }}>필터<br />초기화</button>   
+        <button onClick={handleResetFilters} style={{ display: 'block', margin: '0 auto', marginBottom: '10px' }}>필터<br />초기화</button>
         {/* 체크박스 */}
-        <div style={{ display: 'flex', justifyContent: 'center' }}>
-          <div style={{marginRight: '5px', padding: '5px',  border: '3px solid #0000ff', borderRadius: '10px'}}>
-            <h4>멤버<br />필터</h4>
-
-            {MEMBERS.map((member, index) => (
-              <label key={index} style={{ display: 'block', marginBottom: '1px' }}>
-                <input
-                  type="checkbox"
-                  checked={selectedMembers[index]}
-                  onChange={() => handleMemberChange(index)}
-                />{' '}
-                {member}
-              </label>
-            ))}
-            <div style={{ marginTop: '20px' }}>
-              <h4>필터방식</h4>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ marginBottom: '10px', background: '#E4E4E4', borderRadius: '10px'}}>
+            <h4 style={{ paddingTop: '10px' }}>멤버 필터</h4>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', flexWrap: 'wrap' }}>
               <div>
-                <label style={{ display: 'block' }}>
-                  <input
-                    type="radio"
-                    name="filterMemberOperation"
-                    value="AND"
-                    checked={filterMemberOperation === 'AND'}
-                    onChange={() => {
-                      setFilterMemberOperation('AND')
-                      sessionStorage.setItem('filterMemberOperation', 'AND');
+              {MEMBERS.map((member, index) => (
+                <button
+                  key={index}
+                  style={{
+                    padding: '8px 2px',
+                    border: '1px solid #ccc',
+                    borderRadius: '5px',
+                    width: '70px', // 버튼 너비 고정
+                    backgroundColor: selectedMembers[index] ? COLORS[index] : '#ffffff',
+                    color: selectedMembers[index] ? '#ffffff' : '#333',
+                    cursor: 'pointer',
+                    transform: selectedMembers[index] ? 'scale(0.95)' : 'scale(1)',
+                    transition: 'transform 0.1s ease-in-out, background-color 0.1s ease-in-out',
+                  }}
+                  onClick={() => handleMemberChange(index)}
+                >
+                  {member}
+                </button>
+              ))}
+              </div>
+              <div>
+                <h4 style={{ textAlign: 'center' }}>필터 방식</h4>
+                <div style={{ display: 'flex', justifyContent: 'center' }}>
+                  <button
+                    style={{
+                      padding: '8px 16px',
+                      border: '1px solid #ccc',
+                      borderRadius: '4px',
+                      backgroundColor: filterMemberOperation === 'AND' ? '#007BFF' : '#2ecc71',
+                      color: '#ffffff',
+                      cursor: 'pointer',
+                      transform: 'scale(0.95)',
+                      transition: 'transform 0.1s ease-in-out, background-color 0.1s ease-in-out',
+                      marginBottom: '10px',
                     }}
-                  />{' '}
-                  <br />모두<br />포함
-                </label>
-                <label style={{ display: 'block' }}>
-                  <input
-                    type="radio"
-                    name="filterMemberOperation"
-                    value="OR"
-                    checked={filterMemberOperation === 'OR'}
-                    onChange={() => {
-                      setFilterMemberOperation('OR')
-                      sessionStorage.setItem('filterMemberOperation', 'OR');
+                    onClick={() => {
+                      const newOperation = filterMemberOperation === 'AND' ? 'OR' : 'AND';
+                      setFilterMemberOperation(newOperation);
+                      sessionStorage.setItem('filterMemberOperation', newOperation);
                     }}
-                  />{' '}
-                  <br />하나라도<br />포함
-                </label>
+                  >
+                    {filterMemberOperation === 'AND' ? '모두 포함' : '하나라도 포함'}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-          
-          <div style={{marginRight: '5px', padding: '5px',  border: '3px solid #ff0000', borderRadius: '10px'}}>
-            
-            <h4>채널<br />필터</h4>
 
-            {MEMBERS.slice(0, 10).map((channel, index) => (
-              <label key={index} style={{ display: 'block', marginBottom: '1px' }}>
-                <input
-                  type="checkbox"
-                  checked={selectedChannels[index]}
-                  onChange={() => handleChannelChange(index)}
-                />{' '}
-                {channel}
-              </label>
-            ))}
+          <div style={{ textAlign: 'center', marginBottom: '10px', background: '#E4E4E4', borderRadius: '10px' }}>
+            <h4 style={{ paddingTop: '10px' }}>채널 필터</h4>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', flexWrap: 'wrap', paddingBottom: '10px' }}>
+              {MEMBERS.map((member, index) => (
+                <button
+                  key={index}
+                  style={{
+                    padding: '8px 2px',
+                    border: '1px solid #ccc',
+                    borderRadius: '5px',
+                    width: '70px', // 버튼 너비 고정
+                    backgroundColor: selectedChannels[index] ? COLORS[index] : '#ffffff',
+                    color: selectedChannels[index] ? '#ffffff' : '#333',
+                    cursor: 'pointer',
+                    transform: selectedChannels[index] ? 'scale(0.95)' : 'scale(1)',
+                    transition: 'transform 0.1s ease-in-out, background-color 0.1s ease-in-out',
+                  }}
+                  onClick={() => handleChannelChange(index)}
+                >
+                  {member}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
-        
-        <div style={{ display: 'flex', justifyContent: 'center', padding: '5px' }}>
-          <div style={{marginRight: '5px', padding: '5px',  border: '3px solid #ff00ff', borderRadius: '10px'}}>
-            <h4>컨텐츠<br />필터</h4>
 
-            {CONTENTS.map((content) => (
-              <label key={content} style={{ display: 'block', marginBottom: '1px' }}>
-                <input
-                  type="checkbox"
-                  checked={selectedContents[content]}
-                  onChange={() => handleContentChange(content)}
-                />{' '}
+        <div style={{ background: '#E4E4E4', borderRadius: '10px', textAlign: 'center' }}>
+          <h4 style={{ paddingTop: '10px' }}>컨텐츠 필터</h4>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', flexWrap: 'wrap' }}>
+            {CONTENTS.map((content, index) => (
+              <button
+                key={index}
+                style={{
+                  padding: '8px 2px',
+                  border: '1px solid #ccc',
+                  borderRadius: '5px',
+                  width: '70px', // 버튼 너비 고정
+                  backgroundColor: selectedContents[index] ? '#007BFF' : '#ffffff',
+                  color: selectedContents[index] ? '#ffffff' : '#333',
+                  cursor: 'pointer',
+                  transform: selectedContents[index] ? 'scale(0.95)' : 'scale(1)',
+                  transition: 'transform 0.1s ease-in-out, background-color 0.1s ease-in-out',
+                }}
+                onClick={() => handleContentChange(index)}
+              >
                 {content}
-              </label>
+              </button>
             ))}
-            <div style={{ marginTop: '20px' }}>
-              <h4>필터방식</h4>
-              <div>
-                <label style={{ display: 'block' }}>
-                  <input
-                    type="radio"
-                    name="filterContentOperation"
-                    value="AND"
-                    checked={filterContentOperation === 'AND'}
-                    onChange={() => {
-                      setFilterContentOperation('AND')
-                      sessionStorage.setItem('filterContentOperation', 'AND');
-                    }}
-                  />{' '}
-                  <br />모두<br />포함
-                </label>
-                <label style={{ display: 'block' }}>
-                  <input
-                    type="radio"
-                    name="filterContentOperation"
-                    value="OR"
-                    checked={filterContentOperation === 'OR'}
-                    onChange={() => {
-                      setFilterContentOperation('OR')
-                      sessionStorage.setItem('filterContentOperation', 'OR');
-                    }}
-                  />{' '}
-                  <br />하나라도<br />포함
-                </label>
+            <div>
+              <h4 style={{ textAlign: 'center' }}>필터 방식</h4>
+              <div style={{ display: 'flex', justifyContent: 'center' }}>
+                <button
+                  style={{
+                    padding: '8px 16px',
+                    border: '1px solid #ccc',
+                    borderRadius: '4px',
+                    backgroundColor: filterContentOperation === 'AND' ? '#007BFF' : '#2ecc71',
+                    color: '#ffffff',
+                    cursor: 'pointer',
+                    transform: 'scale(0.95)',
+                    transition: 'transform 0.1s ease-in-out, background-color 0.1s ease-in-out',
+                    marginBottom: '10px',
+                  }}
+                  onClick={() => {
+                    const newOperation2 = filterContentOperation === 'AND' ? 'OR' : 'AND';
+                    setFilterContentOperation(newOperation2);
+                    sessionStorage.setItem('filterContentOperation', newOperation2);
+                  }}
+                >
+                  {filterContentOperation === 'AND' ? '모두 포함' : '하나라도 포함'}
+                </button>
               </div>
             </div>
           </div>
-
         </div>
 
         <button
           onClick={handleResetCalendar}
           style={{
+            display: 'flex',
+            justifyContent: 'center',
             position: 'sticky',
             bottom: '10px',
             width: '90%',
             margin: '10px auto',
-            padding: '10px',
-            backgroundColor: '#f0f0f0',
-            border: '1px solid #ccc',
+            padding: '12px 16px',
+            backgroundColor: '#4CAF50', // 메인 색상 (초록색)
+            color: 'white', // 텍스트 색상
+            border: 'none',
+            borderRadius: '8px', // 둥근 모서리
+            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)', // 그림자 추가
             cursor: 'pointer',
+            fontWeight: 'bold', // 글씨를 조금 더 두껍게
+            transition: 'background-color 0.3s, transform 0.2s', // 배경색과 크기 변화에 애니메이션 적용
           }}
+          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#45A049'} // 호버 시 색상 약간 어둡게
+          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#4CAF50'}
+          onMouseDown={(e) => e.currentTarget.style.transform = 'scale(0.98)'} // 클릭 시 크기 살짝 축소
+          onMouseUp={(e) => e.currentTarget.style.transform = 'scale(1)'}
         >
           달력 접기
         </button>

@@ -6,6 +6,7 @@ import './Timeline.css';
 import axios from 'axios';
 
 const MEMBERS = ['칸나', '유니', '히나', '시로', '리제', '타비', '부키', '린', '나나', '리코'];
+const MEMBERS_ONE = ['칸', '유', '히', '시', '맂', '타', '부', '린', '나', '맄'];
 
 const COLORS = [
   '#373584',
@@ -20,27 +21,6 @@ const COLORS = [
   '#7AD95F',
   '#222222',
 ];
-
-// Timeline.js 파일에서 수정
-const getGradientStyle = (members) => {
-  const activeColors = members
-    .map((value, index) => (value === 1 ? COLORS[index] : null))
-    .filter(Boolean);
-
-  if (activeColors.length === 0) {
-    return { background: '#3498db' }; // 기본 색상 (남색)
-  }
-
-  const gradientPercentage = 100 / activeColors.length;
-  const gradientColors = activeColors
-    .map((color, index) => `${color} ${index * gradientPercentage}%, ${color} ${(index + 1) * gradientPercentage}%`)
-    .join(', ');
-
-  return {
-    background: `linear-gradient(90deg, ${gradientColors})`,
-  };
-};
-
 
 // Group events by date using reduce
 const groupEventsByDate = (events) => {
@@ -73,7 +53,7 @@ const Timeline = () => {
     const savedsearchTextTime = sessionStorage.getItem('searchTextTime');
     const savedselectedMembersTime = sessionStorage.getItem('selectedMembersTime');
     const savedFilterOperation = sessionStorage.getItem('filterOperation');
-  
+
     if (savedsearchTextTime) setsearchTextTime(savedsearchTextTime);
     if (savedselectedMembersTime) setselectedMembersTime(JSON.parse(savedselectedMembersTime));
     if (savedFilterOperation) setFilterOperation(savedFilterOperation);
@@ -283,7 +263,7 @@ const Timeline = () => {
       });
       return newExpandedYears;
     });
-  
+
     // Reset expandedMonths: collapse all months
     setExpandedMonths((prev) => {
       const newExpandedMonths = {};
@@ -307,7 +287,21 @@ const Timeline = () => {
           리플레이 라인
         </button>
 
-        <h2>내비게이션</h2>
+        <h2
+  style={{
+    fontFamily: "'Noto Sans', sans-serif", // 깔끔한 폰트 사용
+    fontSize: '20px', // 제목 크기 지정
+    fontWeight: '700', // 굵게 강조
+    textAlign: 'center', // 텍스트 가운데 정렬
+    color: '#333', // 텍스트 색상
+    backgroundColor: '#f0f0f0', // 배경색 추가
+    padding: '10px', // 패딩으로 여백 추가
+    borderRadius: '8px', // 둥근 모서리로 부드러운 느낌
+    marginBottom: '20px', // 아래쪽 여백 추가
+  }}
+>
+  내비게이션
+</h2>
 
         <input
           type="text"
@@ -334,8 +328,22 @@ const Timeline = () => {
                         <ul>
                           {groupedByYearMonth[year][month].map((event, index) => {
                             return (
-                              <li key={index} onClick={() => handleNavClick(event.date)} style={getGradientStyle(event.members)}>
-                                {event.date.split('-')[2]}일 -
+                              <li key={index} onClick={() => handleNavClick(event.date)}>
+                                {event.date.split('-')[2]}일
+                                {event.members.map((member, memberIndex) => (
+                                  member === 1 && (
+                                    <span
+                                      key={memberIndex}
+                                      style={{
+                                        color: COLORS[memberIndex], // 멤버에 해당하는 색상 적용
+                                        fontWeight: 'bold',
+                                        marginLeft: '4px'
+                                      }}
+                                    >
+                                      {MEMBERS_ONE[memberIndex]}
+                                    </span>
+                                  )
+                                ))}<br />
                                 {event.title.split('\n').map((line, lineIndex) => (
                                   <React.Fragment key={lineIndex}>
                                     {line}
@@ -357,66 +365,97 @@ const Timeline = () => {
         <button onClick={handleResetFilters} style={{ display: 'block', margin: '0 auto', marginBottom: '10px' }}>필터<br />초기화</button>
         {/* 멤버 체크박스 */}
         <div style={{ marginTop: '20px' }}>
-          <h4>멤버 필터</h4>
-          {MEMBERS.map((member, index) => (
-            <label key={index} style={{ display: 'block', marginBottom: '1px' }}>
-              <input
-                type="checkbox"
-                checked={selectedMembersTime[index]}
-                onChange={() => handleMemberChange(index)}
-              />{' '}
-              {member}
-            </label>
+          <h4 style={{ textAlign: 'center' }}>멤버 필터</h4>
+          {MEMBERS.reduce((rows, member, index) => {
+            // 두 개씩 그룹으로 나누기
+            if (index % 2 === 0) {
+              rows.push([member]);
+            } else {
+              rows[rows.length - 1].push(member);
+            }
+            return rows;
+          }, []).map((row, rowIndex) => (
+            <div
+              key={rowIndex}
+              style={{
+                display: 'flex',
+                justifyContent: 'center',
+                gap: '10px', // 버튼 사이 간격
+                marginBottom: '5px'
+              }}
+            >
+              {row.map((member, index) => (
+                <button
+                  key={index}
+                  style={{
+                    padding: '8px 2px',
+                    border: '1px solid #ccc',
+                    borderRadius: '5px',
+                    width: '70px', // 버튼 너비 고정
+                    backgroundColor: selectedMembersTime[rowIndex * 2 + index] ? COLORS[rowIndex * 2 + index] : '#ffffff',
+                    color: selectedMembersTime[rowIndex * 2 + index] ? '#ffffff' : '#333',
+                    cursor: 'pointer',
+                    transform: selectedMembersTime[rowIndex * 2 + index] ? 'scale(0.95)' : 'scale(1)',
+                    transition: 'transform 0.1s ease-in-out, background-color 0.1s ease-in-out',
+                  }}
+                  onClick={() => handleMemberChange(rowIndex * 2 + index)}
+                >
+                  {member}
+                </button>
+              ))}
+            </div>
           ))}
           <div style={{ marginTop: '20px' }}>
-            <h4>필터 방식</h4>
-            <div>
-              <label style={{ display: 'block' }}>
-                <input
-                  type="radio"
-                  name="filterOperation"
-                  value="AND"
-                  checked={filterOperation === 'AND'}
-                  onChange={() => {
-                    setFilterOperation('AND');
-                    sessionStorage.setItem('filterOperation', 'AND');
-                  }}
-                />{' '}
-                모두 포함
-              </label>
-              <label style={{ display: 'block' }}>
-                <input
-                  type="radio"
-                  name="filterOperation"
-                  value="OR"
-                  checked={filterOperation === 'OR'}
-                  onChange={() => {
-                    setFilterOperation('OR');
-                    sessionStorage.setItem('filterOperation', 'OR');
-                  }}
-                />{' '}
-                하나라도 포함
-              </label>
+            <h4 style={{ textAlign: 'center' }}>필터 방식</h4>
+            <div style={{ display: 'flex', justifyContent: 'center' }}>
+              <button
+                style={{
+                  padding: '8px 16px',
+                  border: '1px solid #ccc',
+                  borderRadius: '4px',
+                  backgroundColor: filterOperation === 'AND' ? '#007BFF' : '#2ecc71',
+                  color: '#ffffff',
+                  cursor: 'pointer',
+                  transform: 'scale(0.95)',
+                  transition: 'transform 0.1s ease-in-out, background-color 0.1s ease-in-out',
+                }}
+                onClick={() => {
+                  const newOperation = filterOperation === 'AND' ? 'OR' : 'AND';
+                  setFilterOperation(newOperation);
+                  sessionStorage.setItem('filterOperation', newOperation);
+                }}
+              >
+                {filterOperation === 'AND' ? '모두 포함' : '하나라도 포함'}
+              </button>
             </div>
-
           </div>
         </div>
         <button
-        onClick={handleResetCalendar}
-        style={{
-          position: 'sticky',
-          bottom: '10px',
-          width: '90%',
-          margin: '10px auto',
-          padding: '10px',
-          backgroundColor: '#f0f0f0',
-          border: '1px solid #ccc',
-          cursor: 'pointer',
-        }}
-      >
-        달력 접기
-      </button>
-
+          onClick={handleResetCalendar}
+          style={{
+            display: 'flex',
+            justifyContent: 'center',
+            position: 'sticky',
+            bottom: '10px',
+            width: '90%',
+            margin: '10px auto',
+            padding: '12px 16px',
+            backgroundColor: '#4CAF50', // 메인 색상 (초록색)
+            color: 'white', // 텍스트 색상
+            border: 'none',
+            borderRadius: '8px', // 둥근 모서리
+            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)', // 그림자 추가
+            cursor: 'pointer',
+            fontWeight: 'bold', // 글씨를 조금 더 두껍게
+            transition: 'background-color 0.3s, transform 0.2s', // 배경색과 크기 변화에 애니메이션 적용
+          }}
+          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#45A049'} // 호버 시 색상 약간 어둡게
+          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#4CAF50'}
+          onMouseDown={(e) => e.currentTarget.style.transform = 'scale(0.98)'} // 클릭 시 크기 살짝 축소
+          onMouseUp={(e) => e.currentTarget.style.transform = 'scale(1)'}
+        >
+          달력 접기
+        </button>
       </div>
       <div className="timeline-container">
         <div className="timeline">
@@ -429,7 +468,7 @@ const Timeline = () => {
               {visibleDates.includes(date) && (
                 <>
                   <h2>{date}</h2>
-                  
+
                   {groupedEvents[date].map((event, idx) => (
                     <TimelineItem
                       key={idx}
