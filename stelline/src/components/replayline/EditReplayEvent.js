@@ -38,7 +38,7 @@ const EditReplayEvent = () => {
 
   const handleSave = () => {
     setIsLoading(true);
-    axios.get(`${process.env.REACT_APP_API_URL}/api/replayline/${id}`, {
+    axios.put(`${process.env.REACT_APP_API_URL}/api/replayline/${id}`, {
       date: eventDate,
       members: selectedMembers,
       contents: selectedContents,

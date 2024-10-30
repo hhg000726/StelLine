@@ -26,7 +26,7 @@ const EditTimeEvent = () => {
 
   const handleSave = () => {
     setIsLoading(true);
-    axios.get(`${process.env.REACT_APP_API_URL}/api/timeline/${id}`, {
+    axios.put(`${process.env.REACT_APP_API_URL}/api/timeline/${id}`, {
       date: eventDate,
       members: selectedMembers,
     })
