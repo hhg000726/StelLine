@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import './EditReplayEvent.css';
 
-const MEMBERS = ['칸나', '유니', '히나', '시로', '리제', '타비', '부키', '린', '나나', '리코', '단체, 서버'];
+const MEMBERS = ['칸나', '유니', '히나', '시로', '리제', '타비', '부키', '린', '나나', '리코'];
 const CONTENTS = ['종합게임', '공포게임', '노래', '서버', '기념일', '내부 합방', '외부 합방', '최초 공개', '팬게임', '월드컵', '특별 컨텐츠', '대회'];
 
 const EditReplayEvent = () => {
