@@ -11,3 +11,5 @@ const ViewPage = () => {
         </div>
     );
 };
+
+export default ViewPage;
