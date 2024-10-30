@@ -3,7 +3,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import './TimelineItem.css';
 import { useNavigate } from 'react-router-dom';
 
-const MEMBERS = ['칸나', '유니', '히나', '시로', '리제', '타비', '부키', '린', '나나', '리코', '단체, 서버'];
+const MEMBERS = ['칸나', '유니', '히나', '시로', '리제', '타비', '부키', '린', '나나', '리코'];
 
 const COLORS = [
   '#373584',
@@ -19,7 +19,7 @@ const COLORS = [
   '#222222',
 ];
 
-const TimelineItem = ({ title, videoIds, refCallback, id, date, members }) => {
+const TimelineItem = ({ title, videoIds, refCallback, id, date, members, searchText, originalMembers, originalOperation }) => {
   const itemRef = useRef(null);
   const navigate = useNavigate();
   const [isVisible, setIsVisible] = useState(false);
@@ -54,6 +54,7 @@ const TimelineItem = ({ title, videoIds, refCallback, id, date, members }) => {
   const handleEditTimeEvent = (eventId, eventDate, eventMembers, videoIds, title) => {
     const scrollPosition = window.scrollY;
     sessionStorage.setItem('scrollPosition', scrollPosition);
+
     navigate(`/edit_time/${eventId}`, { state: { id: eventId, date: eventDate, members: eventMembers, videoIds: videoIds, title: title } });
   };
 

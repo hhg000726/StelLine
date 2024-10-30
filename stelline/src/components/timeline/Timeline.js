@@ -5,7 +5,7 @@ import TimelineItem from './TimelineItem';
 import './Timeline.css';
 import axios from 'axios';
 
-const MEMBERS = ['칸나', '유니', '히나', '시로', '리제', '타비', '부키', '린', '나나', '리코', '단체, 서버'];
+const MEMBERS = ['칸나', '유니', '히나', '시로', '리제', '타비', '부키', '린', '나나', '리코'];
 
 const COLORS = [
   '#373584',
@@ -60,13 +60,24 @@ const Timeline = () => {
   const location = useLocation();
   const [eventsCopy, setEventsCopy] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [searchText, setSearchText] = useState('');
-  const [selectedMembers, setSelectedMembers] = useState(Array(11).fill(0));  // 멤버 필터링용 상태
+  const [searchTextTime, setsearchTextTime] = useState('');
+  const [selectedMembersTime, setselectedMembersTime] = useState(Array(10).fill(0));  // 멤버 필터링용 상태
   const [expandedYears, setExpandedYears] = useState({});
   const [expandedMonths, setExpandedMonths] = useState({});
   const [visibleDates, setVisibleDates] = useState([]);
   const [filterOperation, setFilterOperation] = useState('AND');  // AND 또는 OR 선택
   const [navOpen, setNavOpen] = useState(false); // 내비게이션 열림 상태 관리
+
+  useEffect(() => {
+    // 필터 상태 복원
+    const savedsearchTextTime = sessionStorage.getItem('searchTextTime');
+    const savedselectedMembersTime = sessionStorage.getItem('selectedMembersTime');
+    const savedFilterOperation = sessionStorage.getItem('filterOperation');
+  
+    if (savedsearchTextTime) setsearchTextTime(savedsearchTextTime);
+    if (savedselectedMembersTime) setselectedMembersTime(JSON.parse(savedselectedMembersTime));
+    if (savedFilterOperation) setFilterOperation(savedFilterOperation);
+  }, []);
 
   useEffect(() => {
     // 데이터 요청
@@ -140,16 +151,16 @@ const Timeline = () => {
   // 제목과 멤버 필터링을 적용한 이벤트 목록
   const filteredevents = eventsCopy.filter((event) => {
     // 제목 검색 필터
-    const titleMatch = event.title.includes(searchText);
+    const titleMatch = event.title.includes(searchTextTime);
 
     // 멤버 필터: 선택된 연산 방식에 따라 필터링
     let memberMatch;
     if (filterOperation === 'AND') {
-      memberMatch = selectedMembers.every((isSelected, idx) =>
+      memberMatch = selectedMembersTime.every((isSelected, idx) =>
         !isSelected || event.members[idx] === 1
       );
     } else if (filterOperation === 'OR') {
-      memberMatch = selectedMembers.some((isSelected, idx) =>
+      memberMatch = selectedMembersTime.some((isSelected, idx) =>
         isSelected && event.members[idx] === 1
       );
     }
@@ -235,18 +246,24 @@ const Timeline = () => {
   };
 
   const handleMemberChange = (index) => {
-    const updatedMembers = [...selectedMembers];
+    const updatedMembers = [...selectedMembersTime];
     updatedMembers[index] = !updatedMembers[index];
-    setSelectedMembers(updatedMembers);
+    setselectedMembersTime(updatedMembers);
+    sessionStorage.setItem('selectedMembersTime', JSON.stringify(updatedMembers));
   };
 
   const handleSearchChange = (e) => {
-    setSearchText(e.target.value);
+    setsearchTextTime(e.target.value);
+    sessionStorage.setItem('searchTextTime', e.target.value ?? '');
   };
 
   const handleResetFilters = () => {
-    setSearchText('');
-    setSelectedMembers(Array(11).fill(0));
+    setsearchTextTime('');
+    setselectedMembersTime(Array(10).fill(0));
+    setFilterOperation('AND')
+    sessionStorage.setItem('selectedMembersTime', JSON.stringify(Array(10).fill(0)));
+    sessionStorage.setItem('searchTextTime', '');
+    sessionStorage.setItem('filterOperation', 'AND');
   };
 
   const toggleNav = () => {
@@ -256,6 +273,26 @@ const Timeline = () => {
   const handleClickToReplayline = () => {
     navigate('/replayline');
   }
+
+  const handleResetCalendar = () => {
+    // Reset expandedYears: collapse all years
+    setExpandedYears((prev) => {
+      const newExpandedYears = {};
+      Object.keys(prev).forEach((year) => {
+        newExpandedYears[year] = false;
+      });
+      return newExpandedYears;
+    });
+  
+    // Reset expandedMonths: collapse all months
+    setExpandedMonths((prev) => {
+      const newExpandedMonths = {};
+      Object.keys(prev).forEach((key) => {
+        newExpandedMonths[key] = false;
+      });
+      return newExpandedMonths;
+    });
+  };
 
   return (
     <div className="timeline-page">
@@ -275,7 +312,7 @@ const Timeline = () => {
         <input
           type="text"
           placeholder="제목 검색"
-          value={searchText}
+          value={searchTextTime}
           onChange={handleSearchChange}
           style={{ width: '90%', padding: '5px', marginBottom: '10px' }}
         />
@@ -317,19 +354,15 @@ const Timeline = () => {
             </li>
           ))}
         </ul>
-
+        <button onClick={handleResetFilters} style={{ display: 'block', margin: '0 auto', marginBottom: '10px' }}>필터<br />초기화</button>
         {/* 멤버 체크박스 */}
         <div style={{ marginTop: '20px' }}>
           <h4>멤버 필터</h4>
-
-
-          <button onClick={handleResetFilters} style={{ marginBottom: '10px' }}>초기화</button>
-
           {MEMBERS.map((member, index) => (
             <label key={index} style={{ display: 'block', marginBottom: '1px' }}>
               <input
                 type="checkbox"
-                checked={selectedMembers[index]}
+                checked={selectedMembersTime[index]}
                 onChange={() => handleMemberChange(index)}
               />{' '}
               {member}
@@ -344,7 +377,10 @@ const Timeline = () => {
                   name="filterOperation"
                   value="AND"
                   checked={filterOperation === 'AND'}
-                  onChange={() => setFilterOperation('AND')}
+                  onChange={() => {
+                    setFilterOperation('AND');
+                    sessionStorage.setItem('filterOperation', 'AND');
+                  }}
                 />{' '}
                 모두 포함
               </label>
@@ -354,7 +390,10 @@ const Timeline = () => {
                   name="filterOperation"
                   value="OR"
                   checked={filterOperation === 'OR'}
-                  onChange={() => setFilterOperation('OR')}
+                  onChange={() => {
+                    setFilterOperation('OR');
+                    sessionStorage.setItem('filterOperation', 'OR');
+                  }}
                 />{' '}
                 하나라도 포함
               </label>
@@ -362,6 +401,21 @@ const Timeline = () => {
 
           </div>
         </div>
+        <button
+        onClick={handleResetCalendar}
+        style={{
+          position: 'sticky',
+          bottom: '10px',
+          width: '90%',
+          margin: '10px auto',
+          padding: '10px',
+          backgroundColor: '#f0f0f0',
+          border: '1px solid #ccc',
+          cursor: 'pointer',
+        }}
+      >
+        달력 접기
+      </button>
 
       </div>
       <div className="timeline-container">

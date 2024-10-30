@@ -4,8 +4,9 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import ReplaylineItem from './ReplaylineItem';
 import './Replayline.css';
 import axios from 'axios';
+import { VariableSizeList as List } from 'react-window';
 
-const MEMBERS = ['칸나', '유니', '히나', '시로', '리제', '타비', '부키', '린', '나나', '리코', '단체, 서버'];
+const MEMBERS = ['칸나', '유니', '히나', '시로', '리제', '타비', '부키', '린', '나나', '리코'];
 const CONTENTS = ['종합게임', '공포게임', '노래', '서버', '기념일', '내부 합방', '외부 합방', '최초 공개', '팬게임', '월드컵', '특별 컨텐츠', '대회']
 
 const COLORS = [
@@ -57,20 +58,79 @@ const groupEventsByDate = (events) => {
 
 const Replayline = () => {
   const itemRefs = useRef({});
+  const listRef = useRef(null);
+  const resizeTimer = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
   const [eventsCopy, setEventsCopy] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchText, setSearchText] = useState('');
-  const [selectedMembers, setSelectedMembers] = useState(Array(11).fill(0));  // 멤버 필터링용 상태
+  const [selectedMembers, setSelectedMembers] = useState(Array(10).fill(0));  // 멤버 필터링용 상태
   const [selectedChannels, setSelectedChannels] = useState(Array(10).fill(1));  // 채널 필터링용 상태
-  const [selectedContents, setSelectedContents] = useState({ "게임": false, "노래방": false, "컨텐츠": false, "asmr": false, "서버": false, "기념일": false, "외부 합방": false, "신곡": false, "특별": false });  // 컨텐츠 필터링용 상태
+  const [selectedContents, setSelectedContents] = useState(CONTENTS.reduce((acc, key) => {
+    acc[key] = false;
+    return acc;
+  }, {}));  // 컨텐츠 필터링용 상태
   const [expandedYears, setExpandedYears] = useState({});
   const [expandedMonths, setExpandedMonths] = useState({});
-  const [visibleDates, setVisibleDates] = useState([]);
   const [filterMemberOperation, setFilterMemberOperation] = useState('AND');  // AND 또는 OR 선택('OR');  // AND 또는 OR 선택
   const [filterContentOperation, setFilterContentOperation] = useState('AND');  // AND 또는 OR 선택
   const [navOpen, setNavOpen] = useState(false); // 내비게이션 열림 상태 관리
+
+  const [windowSize, setWindowSize] = useState({
+    width: window.innerWidth,
+    height: window.innerHeight,
+  });
+
+  useEffect(() => {
+    // 필터 상태 복원
+    const savedSearchText = sessionStorage.getItem('searchText');
+    const savedSelectedMembers = sessionStorage.getItem('selectedMembers');
+    const savedSelectedChannels = sessionStorage.getItem('selectedChannels');
+    const savedSelectedContents = sessionStorage.getItem('selectedContents');
+    const savedFilterMemberOperation = sessionStorage.getItem('filterMemberOperation');
+    const savedFilterContentOperation = sessionStorage.getItem('filterContentOperation');
+
+    if (savedSearchText) setSearchText(savedSearchText);
+    if (savedSelectedMembers) setSelectedMembers(JSON.parse(savedSelectedMembers));
+    if (savedSelectedChannels) setSelectedChannels(JSON.parse(savedSelectedChannels));
+    if (savedSelectedContents) setSelectedContents(JSON.parse(savedSelectedContents));
+    if (savedFilterMemberOperation) setFilterMemberOperation(savedFilterMemberOperation);
+    if (savedFilterContentOperation) setFilterContentOperation(savedFilterContentOperation);
+  }, []);
+
+  useEffect(() => {
+    const handleResize = () => {
+      // 우선 현재의 윈도우 크기를 설정합니다.
+      setWindowSize({
+        width: window.innerWidth,
+        height: window.innerHeight,
+      });
+
+      // 이전 타이머를 제거합니다.
+      if (resizeTimer.current) {
+        clearTimeout(resizeTimer.current);
+      }
+
+      // 일정 시간이 지나면 (예: 500ms) 강제 리렌더링합니다.
+      resizeTimer.current = setTimeout(() => {
+        setWindowSize({
+          width: window.innerWidth,
+          height: window.innerHeight,
+        });
+      }, 500);
+    };
+
+    window.addEventListener('resize', handleResize);
+
+    // 컴포넌트가 언마운트될 때 리스너와 타이머를 정리합니다.
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      if (resizeTimer.current) {
+        clearTimeout(resizeTimer.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     // 데이터 요청
@@ -93,50 +153,12 @@ const Replayline = () => {
 
   useEffect(() => {
     if (!isLoading && location.state?.restoreScroll) {
-      // 컴포넌트 렌더링 후 스크롤 복원을 위해 setTimeout 사용
       const savedScrollPosition = sessionStorage.getItem('scrollPosition');
-      if (savedScrollPosition) {
-        setTimeout(() => {
-          window.scrollTo(0, parseInt(savedScrollPosition, 10));
-        }, 100);
+      if (savedScrollPosition && listRef.current) {
+        listRef.current.scrollTo(parseInt(savedScrollPosition, 10));
       }
     }
   }, [isLoading, location.state]);
-
-  // Lazy load items based on visibility
-  useEffect(() => {
-    if (eventsCopy.length === 0) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setVisibleDates((prevDates) => {
-              if (!prevDates.includes(entry.target.dataset.date)) {
-                return [...prevDates, entry.target.dataset.date];
-              }
-              return prevDates;
-            });
-          }
-        });
-      },
-      { threshold: 0 }
-    );
-
-    // `itemRefs`를 복사하여 사용
-    const currentRefs = Object.values(itemRefs.current);
-
-    currentRefs.forEach((el) => {
-      if (el) observer.observe(el);
-    });
-
-    return () => {
-      currentRefs.forEach((el) => {
-        if (el) observer.unobserve(el);
-      });
-    };
-  }, [eventsCopy]);
-
 
   if (isLoading) {
     return <div>로딩 중...</div>;
@@ -208,9 +230,21 @@ const Replayline = () => {
   }, {});
 
   const handleNavClick = (arg) => {
-    if (itemRefs.current[arg]) {
-      itemRefs.current[arg].scrollIntoView({ behavior: 'auto' });
+    if (listRef.current) {
+      const index = Object.keys(groupedEvents).indexOf(arg);
+      if (index !== -1) {
+        listRef.current.scrollToItem(index, 'start');
+      }
     }
+  };
+
+  const getItemSize = (index) => {
+    const date = Object.keys(groupedEvents)[index];
+    const videoCount = groupedEvents[date].reduce((total, event) => total + event.videoIds.length, 0);
+    if (window.innerWidth <= 768) {
+      return 172 + (Math.min(1000, window.innerWidth) * 0.5625 + 280) * videoCount
+    }
+    return (172 + (Math.min(1000, window.innerWidth * 0.7) * 0.5625 + 400) * videoCount)
   };
 
   // Toggle the expansion state for a year
@@ -274,12 +308,14 @@ const Replayline = () => {
     const updatedMembers = [...selectedMembers];
     updatedMembers[index] = !updatedMembers[index];
     setSelectedMembers(updatedMembers);
+    sessionStorage.setItem('selectedMembers', JSON.stringify(updatedMembers));
   };
 
   const handleChannelChange = (index) => {
     const updatedChannels = [...selectedChannels];
     updatedChannels[index] = !updatedChannels[index];
     setSelectedChannels(updatedChannels);
+    sessionStorage.setItem('selectedChannels', JSON.stringify(updatedChannels));
   };
 
   const handleContentChange = (content) => {
@@ -287,18 +323,32 @@ const Replayline = () => {
     updatedContents[content] = !updatedContents[content];
     console.log('Updated Contents:', updatedContents);
     setSelectedContents(updatedContents);
+    sessionStorage.setItem('selectedContents', JSON.stringify(updatedContents));
   };
 
   const handleSearchChange = (e) => {
     setSearchText(e.target.value);
+    sessionStorage.setItem('searchText', e.target.value ?? '');
   };
 
   const handleResetFilters = () => {
     setSearchText('');
-    setSelectedMembers(Array(11).fill(0));
-    setSelectedChannels(Array(10).fill(0));
-    setSelectedContents(Array(10).fill(0));
+    setSelectedMembers(Array(10).fill(0));
+    setSelectedChannels(Array(10).fill(1));
+    setSelectedContents(CONTENTS.reduce((acc, key) => {
+      acc[key] = false;
+      return acc;
+    }, {}));
     setFilterMemberOperation('AND')
+    sessionStorage.setItem('searchText', '');
+    sessionStorage.setItem('selectedMembers', JSON.stringify(Array(10).fill(0)));
+    sessionStorage.setItem('selectedChannels', JSON.stringify(Array(10).fill(1)));
+    sessionStorage.setItem('selectedContents', JSON.stringify(CONTENTS.reduce((acc, key) => {
+      acc[key] = false;
+      return acc;
+    }, {})));
+    sessionStorage.setItem('filterMemberOperation', 'AND');
+    sessionStorage.setItem('filterContentOperation', 'AND');
   };
 
   const toggleNav = () => {
@@ -308,6 +358,26 @@ const Replayline = () => {
   const handleClickToTimeline = () => {
     navigate('/timeline');
   }
+
+  const handleResetCalendar = () => {
+    // Reset expandedYears: collapse all years
+    setExpandedYears((prev) => {
+      const newExpandedYears = {};
+      Object.keys(prev).forEach((year) => {
+        newExpandedYears[year] = false;
+      });
+      return newExpandedYears;
+    });
+
+    // Reset expandedMonths: collapse all months
+    setExpandedMonths((prev) => {
+      const newExpandedMonths = {};
+      Object.keys(prev).forEach((key) => {
+        newExpandedMonths[key] = false;
+      });
+      return newExpandedMonths;
+    });
+  };
 
   return (
     <div className="replayline-page">
@@ -350,69 +420,111 @@ const Replayline = () => {
                           {Object.keys(groupedByYearMonthDay[year][month]).sort((a, b) => parseInt(a) - parseInt(b)).map((day) => (
                             <li
                               key={day}
-                              onClick={() => handleNavClick(`${year}-${month}-${day}`)}
-                              style={getGradientStyle(groupedByYearMonthDay[year][month][day].reduce((acc, event) => {
-                                return acc.map((value, index) => value || event.members[index]);
-                              }, Array(MEMBERS.length).fill(0)))}
+                              onClick={(e) => {
+                                handleNavClick(`${year}-${month}-${day}`);
+                                if ('ontouchstart' in window) { // 모바일에서만 실행
+                                  const tooltipContent = groupedByYearMonthDay[year][month][day]
+                                    .map((event, idx) => `<div style="color: ${COLORS[event.members.findIndex(member => member === 1)]}; background: rgba(255, 255, 255, 0.9); padding: 5px; border-radius: 5px; margin-bottom: 5px;">${event.title}</div>`)
+                                    .join('');
+
+                                  // 툴팁 생성 (모바일 클릭 시 화면에 고정 표시)
+                                  const tooltip = document.createElement('div');
+                                  tooltip.className = 'custom-tooltip';
+                                  tooltip.innerHTML = tooltipContent;
+                                  tooltip.style.position = 'fixed';
+                                  tooltip.style.top = '20%';
+                                  tooltip.style.left = '50%';
+                                  tooltip.style.transform = 'translateX(-50%)';
+                                  tooltip.style.background = 'rgba(0, 0, 0, 0.8)';
+                                  tooltip.style.color = 'white';
+                                  tooltip.style.padding = '15px';
+                                  tooltip.style.fontWeight = 'bold';
+                                  tooltip.style.borderRadius = '8px';
+                                  tooltip.style.boxShadow = '0px 0px 10px rgba(0, 0, 0, 0.5)';
+                                  tooltip.style.zIndex = '1000';
+                                  tooltip.addEventListener('click', () => {
+                                    if (tooltip.parentNode) {
+                                      tooltip.parentNode.removeChild(tooltip);
+                                    }
+                                  });
+                                  document.body.appendChild(tooltip);
+
+                                  // 모바일에서도 클릭 후 툴팁을 닫기 위한 설정
+                                  setTimeout(() => {
+                                    document.addEventListener('click', function handleClickOutside(event) {
+                                      if (tooltip && !tooltip.contains(event.target)) {
+                                        if (tooltip.parentNode) {
+                                          tooltip.parentNode.removeChild(tooltip);
+                                        }
+                                        document.removeEventListener('click', handleClickOutside);
+                                      }
+                                    });
+                                  }, 0);
+                                }
+                              }}
                               onMouseEnter={(e) => {
-                                const tooltip = document.createElement('div');
-                                tooltip.className = 'custom-tooltip';
-                                tooltip.innerHTML = groupedByYearMonthDay[year][month][day]
-                                  .map((event, idx) => `<div style="color: ${COLORS[event.members.findIndex(member => member === 1)]}; background: rgba(255, 255, 255, 0.9); padding: 5px; border-radius: 5px; margin-bottom: 5px;">${event.title}</div>`)
-                                  .join('');
-                                tooltip.style.position = 'fixed';
-                                tooltip.style.background = 'rgba(0, 0, 0, 0.8)';
-                                tooltip.style.color = 'white';
-                                tooltip.style.padding = '15px';
-                                tooltip.style.fontWeight = 'bold';
-                                tooltip.style.borderRadius = '8px';
-                                tooltip.style.boxShadow = '0px 0px 10px rgba(0, 0, 0, 0.5)';
-                                tooltip.style.zIndex = '1000';
-                                document.body.appendChild(tooltip);
+                                if (!('ontouchstart' in window)) { // PC에서만 실행
+                                  const tooltipContent = groupedByYearMonthDay[year][month][day]
+                                    .map((event, idx) => `<div style="color: ${COLORS[event.members.findIndex(member => member === 1)]}; background: rgba(255, 255, 255, 0.9); padding: 5px; border-radius: 5px; margin-bottom: 5px;">${event.title}</div>`)
+                                    .join('');
 
-                                const updateTooltipPosition = (e) => {
-                                  let x = e.clientX + 50;
-                                  let y = e.clientY - 10;
-                                  const tooltipRect = tooltip.getBoundingClientRect();
+                                  // 툴팁 생성
+                                  const tooltip = document.createElement('div');
+                                  tooltip.className = 'custom-tooltip';
+                                  tooltip.innerHTML = tooltipContent;
+                                  tooltip.style.position = 'fixed';
+                                  tooltip.style.background = 'rgba(0, 0, 0, 0.8)';
+                                  tooltip.style.color = 'white';
+                                  tooltip.style.padding = '15px';
+                                  tooltip.style.fontWeight = 'bold';
+                                  tooltip.style.borderRadius = '8px';
+                                  tooltip.style.boxShadow = '0px 0px 10px rgba(0, 0, 0, 0.5)';
+                                  tooltip.style.zIndex = '1000';
+                                  document.body.appendChild(tooltip);
 
-                                  // 화면의 오른쪽 경계를 벗어나지 않도록 조정
-                                  if (x + tooltipRect.width > window.innerWidth) {
-                                    x = window.innerWidth - tooltipRect.width - 10;
-                                  }
+                                  const updateTooltipPosition = (e) => {
+                                    let x = e.clientX + 20;
+                                    let y = e.clientY + 20;
+                                    const tooltipRect = tooltip.getBoundingClientRect();
 
-                                  // 화면의 아래쪽 경계를 벗어나지 않도록 조정
-                                  if (y + tooltipRect.height > window.innerHeight) {
-                                    y = window.innerHeight - tooltipRect.height - 10;
-                                  }
+                                    // 화면 경계 조정 - 화면을 넘어가지 않도록 수정
+                                    if (x + tooltipRect.width > window.innerWidth) {
+                                      x = window.innerWidth - tooltipRect.width - 10;
+                                    }
+                                    if (y + tooltipRect.height > window.innerHeight) {
+                                      y = window.innerHeight - tooltipRect.height - 10;
+                                    }
+                                    if (y < 0) {
+                                      y = 10;
+                                    }
+                                    if (x < 0) {
+                                      x = 10;
+                                    }
 
-                                  // 화면의 위쪽 경계를 벗어나지 않도록 조정
-                                  if (y < 0) {
-                                    y = 10;
-                                  }
+                                    tooltip.style.top = `${y}px`;
+                                    tooltip.style.left = `${x}px`;
+                                  };
 
-                                  // 화면의 왼쪽 경계를 벗어나지 않도록 조정
-                                  if (x < 0) {
-                                    x = 10;
-                                  }
+                                  updateTooltipPosition(e);
+                                  e.target.tooltipElement = tooltip;
 
-                                  tooltip.style.top = `${y}px`;
-                                  tooltip.style.left = `${x}px`;
-                                };
-
-                                updateTooltipPosition(e);
-                                e.target.tooltipElement = tooltip;
-
-                                e.target.addEventListener('mousemove', updateTooltipPosition);
-                                e.target.updateTooltipPosition = updateTooltipPosition;
+                                  e.target.addEventListener('mousemove', updateTooltipPosition);
+                                  e.target.updateTooltipPosition = updateTooltipPosition;
+                                }
                               }}
                               onMouseLeave={(e) => {
                                 if (e.target.tooltipElement) {
                                   e.target.removeEventListener('mousemove', e.target.updateTooltipPosition);
-                                  document.body.removeChild(e.target.tooltipElement);
+                                  if (e.target.tooltipElement.parentNode) {
+                                    e.target.tooltipElement.parentNode.removeChild(e.target.tooltipElement);
+                                  }
                                   e.target.tooltipElement = null;
                                   e.target.updateTooltipPosition = null;
                                 }
                               }}
+                              style={getGradientStyle(groupedByYearMonthDay[year][month][day].reduce((acc, event) => {
+                                return acc.map((value, index) => value || event.members[index]);
+                              }, Array(MEMBERS.length).fill(0)))}
                             >
                               {day}일
                             </li>
@@ -426,10 +538,10 @@ const Replayline = () => {
             </li>
           ))}
         </ul>
-
-        {/* 멤버 체크박스 */}
-        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-          <div style={{ marginRight: '40px' }}>
+        <button onClick={handleResetFilters} style={{ display: 'block', margin: '0 auto', marginBottom: '10px' }}>필터<br />초기화</button>   
+        {/* 체크박스 */}
+        <div style={{ display: 'flex', justifyContent: 'center' }}>
+          <div style={{marginRight: '5px', padding: '5px',  border: '3px solid #0000ff', borderRadius: '10px'}}>
             <h4>멤버<br />필터</h4>
 
             {MEMBERS.map((member, index) => (
@@ -451,7 +563,10 @@ const Replayline = () => {
                     name="filterMemberOperation"
                     value="AND"
                     checked={filterMemberOperation === 'AND'}
-                    onChange={() => setFilterMemberOperation('AND')}
+                    onChange={() => {
+                      setFilterMemberOperation('AND')
+                      sessionStorage.setItem('filterMemberOperation', 'AND');
+                    }}
                   />{' '}
                   <br />모두<br />포함
                 </label>
@@ -461,15 +576,19 @@ const Replayline = () => {
                     name="filterMemberOperation"
                     value="OR"
                     checked={filterMemberOperation === 'OR'}
-                    onChange={() => setFilterMemberOperation('OR')}
+                    onChange={() => {
+                      setFilterMemberOperation('OR')
+                      sessionStorage.setItem('filterMemberOperation', 'OR');
+                    }}
                   />{' '}
                   <br />하나라도<br />포함
                 </label>
               </div>
             </div>
           </div>
-          <div>
-            <button onClick={handleResetFilters} >필터<br />초기화</button>
+          
+          <div style={{marginRight: '5px', padding: '5px',  border: '3px solid #ff0000', borderRadius: '10px'}}>
+            
             <h4>채널<br />필터</h4>
 
             {MEMBERS.slice(0, 10).map((channel, index) => (
@@ -484,9 +603,9 @@ const Replayline = () => {
             ))}
           </div>
         </div>
-
-        <div>
-          <div>
+        
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '5px' }}>
+          <div style={{marginRight: '5px', padding: '5px',  border: '3px solid #ff00ff', borderRadius: '10px'}}>
             <h4>컨텐츠<br />필터</h4>
 
             {CONTENTS.map((content) => (
@@ -508,7 +627,10 @@ const Replayline = () => {
                     name="filterContentOperation"
                     value="AND"
                     checked={filterContentOperation === 'AND'}
-                    onChange={() => setFilterContentOperation('AND')}
+                    onChange={() => {
+                      setFilterContentOperation('AND')
+                      sessionStorage.setItem('filterContentOperation', 'AND');
+                    }}
                   />{' '}
                   <br />모두<br />포함
                 </label>
@@ -518,45 +640,68 @@ const Replayline = () => {
                     name="filterContentOperation"
                     value="OR"
                     checked={filterContentOperation === 'OR'}
-                    onChange={() => setFilterContentOperation('OR')}
+                    onChange={() => {
+                      setFilterContentOperation('OR')
+                      sessionStorage.setItem('filterContentOperation', 'OR');
+                    }}
                   />{' '}
                   <br />하나라도<br />포함
                 </label>
               </div>
             </div>
           </div>
+
         </div>
 
-
+        <button
+          onClick={handleResetCalendar}
+          style={{
+            position: 'sticky',
+            bottom: '10px',
+            width: '90%',
+            margin: '10px auto',
+            padding: '10px',
+            backgroundColor: '#f0f0f0',
+            border: '1px solid #ccc',
+            cursor: 'pointer',
+          }}
+        >
+          달력 접기
+        </button>
       </div>
+
+
       <div className="replayline-container">
-        <h1>리플레이 라인</h1>
-        <div className="replayline">
-          {Object.keys(groupedEvents).map((date, index) => (
-            <div
-              key={index}
-              ref={(el) => (itemRefs.current[date] = el)}
-              data-date={date}
-            >
-              {visibleDates.includes(date) && (
-                <>
-                  <h2>{date}</h2>
-                  {groupedEvents[date].map((event, idx) => (
-                    <ReplaylineItem
-                      key={idx}
-                      date={event.date}
-                      title={event.title}
-                      videoIds={event.videoIds}
-                      id={event.id}
-                      members={event.members}
-                      contents={event.contents}
-                    />
-                  ))}
-                </>
-              )}
-            </div>
-          ))}
-        </div>
+
+        <List
+          key={Object.keys(groupedEvents).join('-')}
+          ref={listRef}
+          height={window.innerHeight * 0.9}
+          itemCount={Object.keys(groupedEvents).length}
+          itemSize={getItemSize}
+          width={window.innerWidth > 768 ? window.innerWidth * 0.7 : window.innerWidth}
+        >
+          {({ index, style }) => {
+            const date = Object.keys(groupedEvents)[index];
+            return (
+              <div style={style} ref={(el) => (itemRefs.current[date] = el)} data-date={date}>
+                <h2>{date}</h2>
+                {groupedEvents[date].map((event, idx) => (
+                  <ReplaylineItem
+                    key={idx}
+                    date={event.date}
+                    title={event.title}
+                    videoIds={event.videoIds}
+                    id={event.id}
+                    members={event.members}
+                    contents={event.contents}
+                    listRef={listRef}
+                  />
+                ))}
+              </div>
+            );
+          }}
+        </List>
       </div>
     </div>
   );

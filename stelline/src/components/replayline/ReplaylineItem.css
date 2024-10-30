@@ -9,6 +9,7 @@
     font-size: 1.5rem;
     text-align: center;
     font-family: "Gamja Flower", sans-serif;
+    max-width: 1000px;
 }
 
 .members-contents-container {
@@ -34,7 +35,6 @@
   padding: 5px 10px;
   border-radius: 5px;
   font-size: 1.5rem;
-  
 }
 
 .edit-button {
@@ -54,15 +54,33 @@
 }
 
 .video-item {
-  margin-bottom: 20px;
+  position: relative;
+  width: 100%;
+  padding-top: 56.25%; /* 16:9 aspect ratio (9 / 16 = 0.5625 or 56.25%) */
+  overflow: hidden;
 }
 
+.responsive-video-iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
 
 @media (max-width: 768px) {
 
-    .youtube-video iframe {
-        width: 100%;
-        height: 300px;
-        /* 모바일에서 iframe 높이 줄이기 */
+    h1 {
+      font-size: 1.5rem;
+    }
+    h2 {
+      font-size: 1.5rem;
+    }
+    .member-tag, .content-tag {
+      background-color: #3498db;
+      color: white;
+      padding: 5px 10px;
+      border-radius: 5px;
+      font-size: 0.9rem;
     }
 }

@@ -3,7 +3,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import './ReplaylineItem.css';
 import { useNavigate } from 'react-router-dom';
 
-const MEMBERS = ['칸나', '유니', '히나', '시로', '리제', '타비', '부키', '린', '나나', '리코', '단체, 서버'];
+const MEMBERS = ['칸나', '유니', '히나', '시로', '리제', '타비', '부키', '린', '나나', '리코'];
 
 const COLORS = [
   '#373584',
@@ -19,7 +19,7 @@ const COLORS = [
   '#222222',
 ];
 
-const ReplaylineItem = ({ title, videoIds, refCallback, id, date, members, contents }) => {
+const ReplaylineItem = ({ title, videoIds, refCallback, id, date, members, contents, listRef}) => {
   const itemRef = useRef(null);
   const navigate = useNavigate();
   const [isVisible, setIsVisible] = useState(false);
@@ -53,7 +53,7 @@ const ReplaylineItem = ({ title, videoIds, refCallback, id, date, members, conte
 
   const handleEditReplayEvent = (eventId, eventDate, eventMembers, videoId, title, contents) => {
     // 현재 스크롤 위치 저장
-    const scrollPosition = window.scrollY;
+    const scrollPosition = listRef.current.state.scrollOffset;
     sessionStorage.setItem('scrollPosition', scrollPosition);
     navigate(`/edit_replay/${eventId}`, { state: { id: eventId, date: eventDate, members: eventMembers, videoId: videoId, title: title, contents: contents } });
   };
@@ -91,31 +91,28 @@ const ReplaylineItem = ({ title, videoIds, refCallback, id, date, members, conte
         </div>
         <div>
           {videoIds.map((videoId, idx) => (
-            <div key={idx} className="video-item">
-              {isVisible ? (
-                <div>
-                  <iframe
-                    loading="lazy"
-                    width="560"
-                    height="315"
-                    src={`https://www.youtube.com/embed/${videoId}`}
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                    title={`${title} - Video ${idx + 1}`}
-                  ></iframe>
-                </div>
-              ) : (
-                <div
-                  style={{
-                    width: '560px',
-                    height: '315px',
-                    backgroundColor: '#f0f0f0', // 자리 표시자 배경색
-                  }}
-                ></div>
-              )}
-              <button className="edit-button" onClick={() => handleEditReplayEvent(id, date, members, videoId, title, contents)}>
-                수정
-              </button>
+            <div>
+              <div key={idx} className="video-item">
+                {isVisible ? (
+                  <div>
+                    <iframe className='responsive-video-iframe'
+                      loading="lazy"
+                      src={`https://www.youtube.com/embed/${videoId}`}
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                      title={`${title} - Video ${idx + 1}`}
+                    ></iframe>
+                  </div>
+                ) : (
+                  <div className='responsive-video-iframe'
+                  ></div>
+                )}
+              </div>
+              <div>
+                <button className="edit-button" onClick={() => handleEditReplayEvent(id, date, members, videoId, title, contents)}>
+                  수정
+                </button>
+              </div>
             </div>
           ))}
         </div>

@@ -1,8 +1,6 @@
-/* src/components/Replayline.css */
 .replayline-page {
     display: flex;
     flex-direction: row;
-    /* 좌우 배치를 위해 추가 */
 }
 
 .replayline-nav {
@@ -13,11 +11,9 @@
     position: fixed;
     left: 1%;
     top: 1%;
-    z-index: 1000;
+    z-index: 997;
     max-height: 95vh;
-    /* 최대 높이를 설정하여 화면 높이의 80%로 제한 */
     overflow-y: auto;
-    /* 내용이 넘칠 경우 스크롤을 생성 */
     transition: position 0.3s ease-in-out;
 }
 
@@ -37,6 +33,7 @@
     font-size: medium;
     text-align: left;
     justify-content: space-between;
+    
 }
 
 .replayline-nav ul li:hover {
@@ -76,7 +73,6 @@ h1 {
     align-self: center;
 }
 
-/* Replayline.css */
 .nav-toggle-button {
     display: none;
     /* 기본적으로 숨김 */
@@ -103,8 +99,8 @@ h1 {
         border: none;
         border-radius: 5px;
         cursor: pointer;
-        width: 90%;
-        z-index: 1001;
+        width: 70%;
+        z-index: 999;
         position: fixed;
         left: 5%;
         top: 0;
@@ -121,7 +117,7 @@ h1 {
         margin-bottom: 20px;
         display: none;
         /* 기본적으로 숨김 */
-        z-index: 1000;
+        z-index: 998;
     }
 
     .replayline-nav.open {
