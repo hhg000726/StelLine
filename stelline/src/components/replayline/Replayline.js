@@ -688,10 +688,10 @@ const Replayline = () => {
                   border: '1px solid #ccc',
                   borderRadius: '5px',
                   width: '70px', // 버튼 너비 고정
-                  backgroundColor: selectedContents[index] ? '#007BFF' : '#ffffff',
-                  color: selectedContents[index] ? '#ffffff' : '#333',
+                  backgroundColor: selectedContents[content] ? '#007BFF' : '#ffffff',
+                  color: selectedContents[content] ? '#ffffff' : '#333',
                   cursor: 'pointer',
-                  transform: selectedContents[index] ? 'scale(0.95)' : 'scale(1)',
+                  transform: selectedContents[content] ? 'scale(0.95)' : 'scale(1)',
                   transition: 'transform 0.1s ease-in-out, background-color 0.1s ease-in-out',
                 }}
                 onClick={() => handleContentChange(content)}
