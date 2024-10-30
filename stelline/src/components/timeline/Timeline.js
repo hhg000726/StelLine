@@ -419,7 +419,6 @@ const Timeline = () => {
 
       </div>
       <div className="timeline-container">
-        <h1>타임라인</h1>
         <div className="timeline">
           {Object.keys(groupedEvents).map((date, index) => (
             <div
