@@ -1,0 +1,138 @@
+.page {
+  display: flex;
+  flex-direction: row;
+}
+
+.nav {
+  width: 20%;
+  background: #D1D1D1;
+  padding: 10px;
+  border-radius: 8px;
+  position: fixed;
+  left: 1%;
+  top: 1%;
+  z-index: 997;
+  max-height: 95vh;
+  overflow-y: auto;
+  transition: position 0.3s ease-in-out;
+}
+
+.nav ul {
+  list-style: none;
+  padding: 0;
+}
+
+.nav ul li {
+  font-family: 'Noto Sans', 'Spoqa Han Sans Neo', sans-serif;
+  cursor: pointer;
+  padding: 5px;
+  margin-bottom: 5px;
+  background: #FAF3E0;
+  color: #333;
+  font-weight: bold;
+  border-radius: 4px;
+  font-size: medium;
+  text-align: left;
+  justify-content: space-between;
+}
+
+.nav ul li:hover {
+  background: #EFE5D4;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  transition: background 0.3s, border-color 0.3s;
+}
+
+.container {
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+  margin-left: 22%;
+  width: 100%;
+}
+
+.line {
+  position: relative;
+  width: 100%;
+  max-width: 90%;
+  margin: 0 auto;
+  width: 100%;
+  max-width: 800px;
+}
+
+.line:before {
+  content: '';
+  position: absolute;
+  transform: translateX(-50%);
+  left: 52%;
+  width: 2px;
+  height: 100%;
+  background: #3498db;
+}
+
+h1 {
+  align-self: center;
+}
+
+.nav-toggle-button {
+  display: none;
+}
+
+.filter-container {
+  padding: 5px;
+  background-color: #E4E4E4;
+  border-radius: 10px;
+  text-align: center;
+  margin-bottom: 5px;
+}
+
+@media (max-width: 768px) {
+
+  .container {
+      display: flex;
+      justify-content: center;
+      flex-direction: column;
+      margin-top: 5%;
+      margin-left: 0;
+      padding: 0px;
+  }
+
+  .nav-toggle-button {
+      display: block;
+      margin: 10px;
+      padding: 10px;
+      background-color: #3498db;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      width: 70%;
+      z-index: 999;
+      position: fixed;
+      left: 5%;
+      top: 0;
+  }
+
+  .nav {
+      width: 100%;
+      position: fixed;
+      left: 0;
+      top: 0;
+      max-width: 30%;
+      max-height: 80vh;
+      margin-top: 10%;
+      margin-bottom: 20px;
+      display: none;
+      z-index: 998;
+  }
+
+  .nav.open {
+      display: block;
+  }
+
+  .nav.closed {
+      display: none;
+  }
+}

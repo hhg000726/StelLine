@@ -1,6 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Gamja+Flower&family=Nanum+Brush+Script&family=Nanum+Pen+Script&display=swap');
 
-.replayline-content {
+.content {
     background: #f7f7f7;
     padding: 20px;
     border-radius: 8px;
@@ -12,24 +12,24 @@
     max-width: 1000px;
 }
 
-.members-contents-container {
+.list-container {
   display: flex;
   justify-content: space-between;
   margin-bottom: 20px;
 }
 
-.members-display, .contents-display {
+.display {
   width: 48%;
 }
 
-.members-list, .contents-list {
+.list {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
   justify-content: center;
 }
 
-.member-tag, .content-tag {
+.tag {
   background-color: #3498db;
   color: white;
   padding: 5px 10px;

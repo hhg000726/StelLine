@@ -1,49 +1,18 @@
 // src/components/Replayline.js
 import React, { useRef, useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import ReplaylineItem from './ReplaylineItem';
-import './Replayline.css';
-import axios from 'axios';
 import { VariableSizeList as List } from 'react-window';
+import axios from 'axios';
 
-const MEMBERS = ['칸나', '유니', '히나', '시로', '리제', '타비', '부키', '린', '나나', '리코'];
-const CONTENTS = ['종합게임', '공포게임', '노래', '서버', '기념일', '내부 합방', '외부 합방', '최초 공개', '팬게임', '월드컵', '특별 컨텐츠', '대회']
-const MEMBERS_ONE = ['칸', '유', '히', '시', '맂', '타', '부', '린', '나', '맄'];
-
-const COLORS = [
-  '#373584',
-  '#B77DE4',
-  '#DFB387',
-  '#757875',
-  '#D94854',
-  '#50D3F0',
-  '#794EB7',
-  '#77A0F2',
-  '#FFAABA',
-  '#7AD95F',
-  '#222222',
-];
-
-// Replayline.js 파일에서 수정
-const getGradientStyle = (members) => {
-  const activeColors = members
-    .map((value, index) => (value === 1 ? COLORS[index] : null))
-    .filter(Boolean);
-
-  if (activeColors.length === 0) {
-    return { background: '#3498db' }; // 기본 색상 (남색)
-  }
-
-  const gradientPercentage = 100 / activeColors.length;
-  const gradientColors = activeColors
-    .map((color, index) => `${color} ${index * gradientPercentage}%, ${color} ${(index + 1) * gradientPercentage}%`)
-    .join(', ');
-
-  return {
-    background: `linear-gradient(90deg, ${gradientColors})`,
-  };
-};
-
+import '../shared/Line.css';
+import ReplaylineItem from './ReplaylineItem';
+import { MEMBERS, COLORS, CONTENTS } from '../../consts.js'
+import Filter from '../nav/Filter/Filter.js';
+import Operation from '../nav/Filter/Operation.js';
+import OneClickButton from '../nav/buttons/OneClickButton.js';
+import Title from '../nav/Title.js';
+import YearItem from '../nav/calendar/YearItem.js'
+import { groupedByDate, ResetCalendar, toggleExpandMonth, toggleExpandYear } from '../../utils.js';
 
 // Group events by date using reduce
 const groupEventsByDate = (events) => {
@@ -212,23 +181,7 @@ const Replayline = () => {
 
   const groupedEvents = groupEventsByDate(filteredevents);
 
-  // Group dates by year and month for navigation
-  const groupedByYearMonth = filteredevents.reduce((grouped, event) => {
-    const [year, month] = event.date.split('-');
-    if (!grouped[year]) grouped[year] = {};
-    if (!grouped[year][month]) grouped[year][month] = [];
-    grouped[year][month].push(event);
-    return grouped;
-  }, {});
-
-  const groupedByYearMonthDay = filteredevents.reduce((grouped, event) => {
-    const [year, month, day] = event.date.split('-');
-    if (!grouped[year]) grouped[year] = {};
-    if (!grouped[year][month]) grouped[year][month] = {};
-    if (!grouped[year][month][day]) grouped[year][month][day] = [];
-    grouped[year][month][day].push(event);
-    return grouped;
-  }, {});
+  const groupedByYearMonthDay = groupedByDate(filteredevents)
 
   const handleNavClick = (arg) => {
     if (listRef.current) {
@@ -250,59 +203,12 @@ const Replayline = () => {
 
   // Toggle the expansion state for a year
   const toggleYear = (year) => {
-    setExpandedYears((prev) => {
-      // 모든 연도를 접기
-      const newExpandedYears = Object.keys(prev).reduce((acc, key) => {
-        acc[key] = false;
-        return acc;
-      }, {});
-
-      // 클릭한 연도는 토글하여 펼치거나 접음
-      newExpandedYears[year] = !prev[year];
-
-      // 만약 연도를 접는 경우, 해당 연도에 속한 모든 월도 접기
-      if (!newExpandedYears[year]) {
-        const monthsInYear = Object.keys(groupedByYearMonth[year]);
-        setExpandedMonths((prevMonths) => {
-          const newExpandedMonths = { ...prevMonths };
-          monthsInYear.forEach((month) => {
-            newExpandedMonths[`${year}-${month}`] = false;
-          });
-          return newExpandedMonths;
-        });
-      }
-
-      return newExpandedYears;
-    });
-
-    // 다른 연도를 접을 때 해당 연도의 모든 월도 접기
-    setExpandedMonths((prev) => {
-      const newExpandedMonths = { ...prev };
-      Object.keys(groupedByYearMonth).forEach((otherYear) => {
-        if (otherYear !== year) {
-          Object.keys(groupedByYearMonth[otherYear]).forEach((month) => {
-            newExpandedMonths[`${otherYear}-${month}`] = false;
-          });
-        }
-      });
-      return newExpandedMonths;
-    });
+    toggleExpandYear(year, groupedByYearMonthDay, setExpandedYears, setExpandedMonths)
   };
 
   // Toggle the expansion state for a month
   const toggleMonth = (year, month) => {
-    setExpandedMonths((prev) => {
-      // 같은 연도의 다른 모든 월을 접기
-      const newExpandedMonths = { ...prev };
-      Object.keys(groupedByYearMonth[year]).forEach((otherMonth) => {
-        newExpandedMonths[`${year}-${otherMonth}`] = false;
-      });
-
-      // 클릭한 월의 상태를 반대로 토글
-      newExpandedMonths[`${year}-${month}`] = !prev[`${year}-${month}`];
-
-      return newExpandedMonths;
-    });
+    toggleExpandMonth(year, month, groupedByYearMonthDay, setExpandedMonths);
   };
 
   const handleMemberChange = (index) => {
@@ -331,6 +237,18 @@ const Replayline = () => {
     setSearchText(e.target.value);
     sessionStorage.setItem('searchText', e.target.value ?? '');
   };
+
+  const handleFilterMemberOperationChange = () => {
+    const newOperation = filterMemberOperation === 'AND' ? 'OR' : 'AND';
+    setFilterMemberOperation(newOperation);
+    sessionStorage.setItem('filterMemberOperation', newOperation)
+  }
+
+  const handleFilterContentOperationChande = () => {
+    const newOperation2 = filterContentOperation === 'AND' ? 'OR' : 'AND';
+    setFilterContentOperation(newOperation2);
+    sessionStorage.setItem('filterContentOperation', newOperation2);
+  }
 
   const handleResetFilters = () => {
     setSearchText('');
@@ -362,54 +280,24 @@ const Replayline = () => {
   }
 
   const handleResetCalendar = () => {
-    // Reset expandedYears: collapse all years
-    setExpandedYears((prev) => {
-      const newExpandedYears = {};
-      Object.keys(prev).forEach((year) => {
-        newExpandedYears[year] = false;
-      });
-      return newExpandedYears;
-    });
-
-    // Reset expandedMonths: collapse all months
-    setExpandedMonths((prev) => {
-      const newExpandedMonths = {};
-      Object.keys(prev).forEach((key) => {
-        newExpandedMonths[key] = false;
-      });
-      return newExpandedMonths;
-    });
+    ResetCalendar(setExpandedYears, setExpandedMonths)
   };
 
   return (
-    <div className="replayline-page">
+    <div className="page">
 
       <button className="nav-toggle-button" onClick={toggleNav}>
         {navOpen ? '내비게이션 닫기' : '내비게이션 열기'}
       </button>
 
-      <div className={`replayline-nav ${navOpen ? 'open' : 'closed'}`}>
+      <div className={`nav ${navOpen ? 'open' : 'closed'}`}>
 
-        <button onClick={handleClickToTimeline}>
-          타임 라인
-        </button>
+        <OneClickButton
+          handler={handleClickToTimeline}
+          text={"주요 영상으로"}
+        />
 
-        <h2
-          style={{
-            fontFamily: "'Noto Sans', sans-serif", // 깔끔한 폰트 사용
-            fontSize: '20px', // 제목 크기 지정
-            fontWeight: '700', // 굵게 강조
-            textAlign: 'center', // 텍스트 가운데 정렬
-            color: '#333', // 텍스트 색상
-            backgroundColor: '#f0f0f0', // 배경색 추가
-            padding: '10px', // 패딩으로 여백 추가
-            borderRadius: '8px', // 둥근 모서리로 부드러운 느낌
-            marginBottom: '20px', // 아래쪽 여백 추가
-          }}
-        >
-          내비게이션
-        </h2>
-
+        <Title />
 
         <input
           type="text"
@@ -418,346 +306,78 @@ const Replayline = () => {
           onChange={handleSearchChange}
           style={{ width: '90%', padding: '5px', marginBottom: '10px' }}
         />
-
+        
         <ul>
           {Object.keys(groupedByYearMonthDay).map((year) => (
-            <li key={year}>
-              <span onClick={() => toggleYear(year)} style={{ cursor: 'pointer', display: 'block' }}>
-                {year} {expandedYears[year] ? '▲' : '▼'}
-              </span>
-              {expandedYears[year] && (
-                <ul>
-                  {Object.keys(groupedByYearMonthDay[year]).sort((a, b) => parseInt(a) - parseInt(b)).map((month) => (
-                    <li key={month}>
-                      <span onClick={() => toggleMonth(year, month)} style={{ cursor: 'pointer', display: 'block' }}>
-                        {month}월 {expandedMonths[`${year}-${month}`] ? '▲' : '▼'}
-                      </span>
-                      {expandedMonths[`${year}-${month}`] && (
-                        <ul>
-                          {Object.keys(groupedByYearMonthDay[year][month]).sort((a, b) => parseInt(a) - parseInt(b)).map((day) => (
-                            <li
-                              key={day}
-                              onClick={(e) => {
-                                handleNavClick(`${year}-${month}-${day}`);
-                                if ('ontouchstart' in window) { // 모바일에서만 실행
-                                  const tooltipContent = groupedByYearMonthDay[year][month][day]
-                                    .map((event, idx) => `<div style="color: ${COLORS[event.members.findIndex(member => member === 1)]}; background: rgba(255, 255, 255, 0.9); padding: 5px; border-radius: 5px; margin-bottom: 5px;">${event.title}</div>`)
-                                    .join('');
-
-                                  // 툴팁 생성 (모바일 클릭 시 화면에 고정 표시)
-                                  const tooltip = document.createElement('div');
-                                  tooltip.className = 'custom-tooltip';
-                                  tooltip.innerHTML = tooltipContent;
-                                  tooltip.style.position = 'fixed';
-                                  tooltip.style.top = '20%';
-                                  tooltip.style.left = '50%';
-                                  tooltip.style.transform = 'translateX(-50%)';
-                                  tooltip.style.background = 'rgba(0, 0, 0, 0.8)';
-                                  tooltip.style.color = 'white';
-                                  tooltip.style.padding = '15px';
-                                  tooltip.style.fontWeight = 'bold';
-                                  tooltip.style.borderRadius = '8px';
-                                  tooltip.style.boxShadow = '0px 0px 10px rgba(0, 0, 0, 0.5)';
-                                  tooltip.style.zIndex = '1000';
-                                  tooltip.addEventListener('click', () => {
-                                    if (tooltip.parentNode) {
-                                      tooltip.parentNode.removeChild(tooltip);
-                                    }
-                                  });
-                                  document.body.appendChild(tooltip);
-
-                                  // 모바일에서도 클릭 후 툴팁을 닫기 위한 설정
-                                  setTimeout(() => {
-                                    document.addEventListener('click', function handleClickOutside(event) {
-                                      if (tooltip && !tooltip.contains(event.target)) {
-                                        if (tooltip.parentNode) {
-                                          tooltip.parentNode.removeChild(tooltip);
-                                        }
-                                        document.removeEventListener('click', handleClickOutside);
-                                      }
-                                    });
-                                  }, 0);
-                                }
-                              }}
-                              onMouseEnter={(e) => {
-                                if (!('ontouchstart' in window)) { // PC에서만 실행
-                                  const tooltipContent = groupedByYearMonthDay[year][month][day]
-                                    .map((event, idx) => `<div style="color: ${COLORS[event.members.findIndex(member => member === 1)]}; background: rgba(255, 255, 255, 0.9); padding: 5px; border-radius: 5px; margin-bottom: 5px;">${event.title}</div>`)
-                                    .join('');
-
-                                  // 툴팁 생성
-                                  const tooltip = document.createElement('div');
-                                  tooltip.className = 'custom-tooltip';
-                                  tooltip.innerHTML = tooltipContent;
-                                  tooltip.style.position = 'fixed';
-                                  tooltip.style.background = 'rgba(0, 0, 0, 0.8)';
-                                  tooltip.style.color = 'white';
-                                  tooltip.style.padding = '15px';
-                                  tooltip.style.fontWeight = 'bold';
-                                  tooltip.style.borderRadius = '8px';
-                                  tooltip.style.boxShadow = '0px 0px 10px rgba(0, 0, 0, 0.5)';
-                                  tooltip.style.zIndex = '1000';
-                                  document.body.appendChild(tooltip);
-
-                                  const updateTooltipPosition = (e) => {
-                                    let x = e.clientX + 20;
-                                    let y = e.clientY + 20;
-                                    const tooltipRect = tooltip.getBoundingClientRect();
-
-                                    // 화면 경계 조정 - 화면을 넘어가지 않도록 수정
-                                    if (x + tooltipRect.width > window.innerWidth) {
-                                      x = window.innerWidth - tooltipRect.width - 10;
-                                    }
-                                    if (y + tooltipRect.height > window.innerHeight) {
-                                      y = window.innerHeight - tooltipRect.height - 10;
-                                    }
-                                    if (y < 0) {
-                                      y = 10;
-                                    }
-                                    if (x < 0) {
-                                      x = 10;
-                                    }
-
-                                    tooltip.style.top = `${y}px`;
-                                    tooltip.style.left = `${x}px`;
-                                  };
-
-                                  updateTooltipPosition(e);
-                                  e.target.tooltipElement = tooltip;
-
-                                  e.target.addEventListener('mousemove', updateTooltipPosition);
-                                  e.target.updateTooltipPosition = updateTooltipPosition;
-                                }
-                              }}
-                              onMouseLeave={(e) => {
-                                if (e.target.tooltipElement) {
-                                  e.target.removeEventListener('mousemove', e.target.updateTooltipPosition);
-                                  if (e.target.tooltipElement.parentNode) {
-                                    e.target.tooltipElement.parentNode.removeChild(e.target.tooltipElement);
-                                  }
-                                  e.target.tooltipElement = null;
-                                  e.target.updateTooltipPosition = null;
-                                }
-                                const existingTooltips = document.querySelectorAll('.custom-tooltip');
-                                existingTooltips.forEach((tooltip) => {
-                                  if (tooltip.parentNode) {
-                                    tooltip.parentNode.removeChild(tooltip);
-                                  }
-                                });
-                              }}
-                            >
-                              {day}일<br />
-                              {
-                                (() => {
-                                  // 0. 10개의 배열을 만들어 초기화합니다.
-                                  const memberPresenceArray = Array(10).fill(0);
-
-                                  // 1. 해당 날짜의 이벤트를 순회합니다.
-                                  groupedByYearMonthDay[year][month][day].forEach((event) => {
-                                    // 2. members 배열을 순회하며 1인 경우 갱신합니다.
-                                    event.members.forEach((member, idx) => {
-                                      if (member === 1) {
-                                        memberPresenceArray[idx] = 1;
-                                      }
-                                    });
-
-                                    // 3. event의 channel이 특정 값이라면 해당 인덱스를 갱신합니다.
-                                    if (event.channel >= 0 && event.channel < memberPresenceArray.length) {
-                                      memberPresenceArray[event.channel] = 1;
-                                    }
-                                  });
-
-                                  // 4. 배열을 순회하며 각 값에 대해 한 글자 출력을 생성합니다.
-                                  return memberPresenceArray.map((member, memberIndex) =>
-                                    member === 1 ? (
-                                      <span
-                                        key={memberIndex}
-                                        style={{
-                                          color: COLORS[memberIndex], // 멤버에 해당하는 색상 적용
-                                          fontWeight: 'bold',
-                                          marginLeft: '4px',
-                                        }}
-                                      >
-                                        {MEMBERS_ONE[memberIndex]}
-                                      </span>
-                                    ) : null
-                                  );
-                                })()
-                              }
-
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </li>
+            <YearItem
+              key={year}
+              year={year}
+              expanded={expandedYears[year]}
+              toggleYear={toggleYear}
+              groupedByDate={groupedByYearMonthDay}
+              expandedMonths={expandedMonths}
+              toggleMonth={toggleMonth}
+              handler={handleNavClick}
+            />
           ))}
         </ul>
-        <button onClick={handleResetFilters} style={{ display: 'block', margin: '0 auto', marginBottom: '10px' }}>필터<br />초기화</button>
-        {/* 체크박스 */}
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ marginBottom: '10px', background: '#E4E4E4', borderRadius: '10px'}}>
-            <h4 style={{ paddingTop: '10px' }}>멤버 필터</h4>
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', flexWrap: 'wrap' }}>
-              <div>
-              {MEMBERS.map((member, index) => (
-                <button
-                  key={index}
-                  style={{
-                    padding: '8px 2px',
-                    border: '1px solid #ccc',
-                    borderRadius: '5px',
-                    width: '70px', // 버튼 너비 고정
-                    backgroundColor: selectedMembers[index] ? COLORS[index] : '#ffffff',
-                    color: selectedMembers[index] ? '#ffffff' : '#333',
-                    cursor: 'pointer',
-                    transform: selectedMembers[index] ? 'scale(0.95)' : 'scale(1)',
-                    transition: 'transform 0.1s ease-in-out, background-color 0.1s ease-in-out',
-                  }}
-                  onClick={() => handleMemberChange(index)}
-                >
-                  {member}
-                </button>
-              ))}
-              </div>
-              <div>
-                <h4 style={{ textAlign: 'center' }}>필터 방식</h4>
-                <div style={{ display: 'flex', justifyContent: 'center' }}>
-                  <button
-                    style={{
-                      padding: '8px 16px',
-                      border: '1px solid #ccc',
-                      borderRadius: '4px',
-                      backgroundColor: filterMemberOperation === 'AND' ? '#007BFF' : '#2ecc71',
-                      color: '#ffffff',
-                      cursor: 'pointer',
-                      transform: 'scale(0.95)',
-                      transition: 'transform 0.1s ease-in-out, background-color 0.1s ease-in-out',
-                      marginBottom: '10px',
-                    }}
-                    onClick={() => {
-                      const newOperation = filterMemberOperation === 'AND' ? 'OR' : 'AND';
-                      setFilterMemberOperation(newOperation);
-                      sessionStorage.setItem('filterMemberOperation', newOperation);
-                    }}
-                  >
-                    {filterMemberOperation === 'AND' ? '모두 포함' : '하나라도 포함'}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
+        
+        <OneClickButton
+          handler={handleResetFilters}
+          text={'필터 초기화'}
+        />
 
-          <div style={{ textAlign: 'center', marginBottom: '10px', background: '#E4E4E4', borderRadius: '10px' }}>
-            <h4 style={{ paddingTop: '10px' }}>채널 필터</h4>
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', flexWrap: 'wrap', paddingBottom: '10px' }}>
-              {MEMBERS.map((member, index) => (
-                <button
-                  key={index}
-                  style={{
-                    padding: '8px 2px',
-                    border: '1px solid #ccc',
-                    borderRadius: '5px',
-                    width: '70px', // 버튼 너비 고정
-                    backgroundColor: selectedChannels[index] ? COLORS[index] : '#ffffff',
-                    color: selectedChannels[index] ? '#ffffff' : '#333',
-                    cursor: 'pointer',
-                    transform: selectedChannels[index] ? 'scale(0.95)' : 'scale(1)',
-                    transition: 'transform 0.1s ease-in-out, background-color 0.1s ease-in-out',
-                  }}
-                  onClick={() => handleChannelChange(index)}
-                >
-                  {member}
-                </button>
-              ))}
-            </div>
-          </div>
+        <div className="filter-container">
+          <h4>멤버 필터</h4>
+          <Filter
+            targets={MEMBERS}
+            state={selectedMembers}
+            backgroundColor={(index) => selectedMembers[index] ? COLORS[index] : '#ffffff'}
+            color={(index) => selectedMembers[index] ? '#ffffff' : '#333'}
+            handler={handleMemberChange}
+          />
+          <Operation
+            backgroundColor={filterMemberOperation === 'AND' ? '#007BFF' : '#2ecc71'}
+            handler={handleFilterMemberOperationChange}
+            text={filterMemberOperation === 'AND' ? '모두 포함' : '하나라도 포함'}
+          />
         </div>
 
-        <div style={{ background: '#E4E4E4', borderRadius: '10px', textAlign: 'center' }}>
-          <h4 style={{ paddingTop: '10px' }}>컨텐츠 필터</h4>
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', flexWrap: 'wrap' }}>
-            {CONTENTS.map((content, index) => (
-              <button
-                key={index}
-                style={{
-                  padding: '8px 2px',
-                  border: '1px solid #ccc',
-                  borderRadius: '5px',
-                  width: '70px', // 버튼 너비 고정
-                  backgroundColor: selectedContents[content] ? '#007BFF' : '#ffffff',
-                  color: selectedContents[content] ? '#ffffff' : '#333',
-                  cursor: 'pointer',
-                  transform: selectedContents[content] ? 'scale(0.95)' : 'scale(1)',
-                  transition: 'transform 0.1s ease-in-out, background-color 0.1s ease-in-out',
-                }}
-                onClick={() => handleContentChange(content)}
-              >
-                {content}
-              </button>
-            ))}
-            <div>
-              <h4 style={{ textAlign: 'center' }}>필터 방식</h4>
-              <div style={{ display: 'flex', justifyContent: 'center' }}>
-                <button
-                  style={{
-                    padding: '8px 16px',
-                    border: '1px solid #ccc',
-                    borderRadius: '4px',
-                    backgroundColor: filterContentOperation === 'AND' ? '#007BFF' : '#2ecc71',
-                    color: '#ffffff',
-                    cursor: 'pointer',
-                    transform: 'scale(0.95)',
-                    transition: 'transform 0.1s ease-in-out, background-color 0.1s ease-in-out',
-                    marginBottom: '10px',
-                  }}
-                  onClick={() => {
-                    const newOperation2 = filterContentOperation === 'AND' ? 'OR' : 'AND';
-                    setFilterContentOperation(newOperation2);
-                    sessionStorage.setItem('filterContentOperation', newOperation2);
-                  }}
-                >
-                  {filterContentOperation === 'AND' ? '모두 포함' : '하나라도 포함'}
-                </button>
-              </div>
-            </div>
-          </div>
+        <div className="filter-container">
+          <h4>채널 필터</h4>
+          <Filter
+            targets={MEMBERS}
+            state={selectedChannels}
+            backgroundColor={(index) => selectedChannels[index] ? COLORS[index] : '#ffffff'}
+            color={(index) => selectedChannels[index] ? '#ffffff' : '#333'}
+            handler={handleChannelChange}
+          />
         </div>
 
-        <button
-          onClick={handleResetCalendar}
-          style={{
-            display: 'flex',
-            justifyContent: 'center',
-            position: 'sticky',
-            bottom: '10px',
-            width: '90%',
-            margin: '10px auto',
-            padding: '12px 16px',
-            backgroundColor: '#4CAF50', // 메인 색상 (초록색)
-            color: 'white', // 텍스트 색상
-            border: 'none',
-            borderRadius: '8px', // 둥근 모서리
-            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)', // 그림자 추가
-            cursor: 'pointer',
-            fontWeight: 'bold', // 글씨를 조금 더 두껍게
-            transition: 'background-color 0.3s, transform 0.2s', // 배경색과 크기 변화에 애니메이션 적용
-          }}
-          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#45A049'} // 호버 시 색상 약간 어둡게
-          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#4CAF50'}
-          onMouseDown={(e) => e.currentTarget.style.transform = 'scale(0.98)'} // 클릭 시 크기 살짝 축소
-          onMouseUp={(e) => e.currentTarget.style.transform = 'scale(1)'}
-        >
-          달력 접기
-        </button>
+        <div className="filter-container">
+          <h4>컨텐츠 필터</h4>
+          <Filter
+            targets={CONTENTS}
+            state={selectedContents}
+            backgroundColor={(content) => selectedContents[content] ? '#007BFF' : '#ffffff'}
+            color={(content) => selectedContents[content] ? '#ffffff' : '#333'}
+            handler={handleContentChange}
+          />
+          <Operation
+            backgroundColor={filterContentOperation === 'AND' ? '#007BFF' : '#2ecc71'}
+            handler={handleFilterContentOperationChande}
+            text={filterContentOperation === 'AND' ? '모두 포함' : '하나라도 포함'}
+          />
+        </div>
+
+        <OneClickButton
+          handler={handleResetCalendar}
+          text={"달력 접기"}
+        />
+
       </div>
 
-
-      <div className="replayline-container">
-
+      <div className="container">
         <List
           key={Object.keys(groupedEvents).join('-')}
           ref={listRef}

@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import './EditTimeEvent.css';
 
-const MEMBERS = ['칸나', '유니', '히나', '시로', '리제', '타비', '부키', '린', '나나', '리코'];
+import '../shared/Edit.css';
+import { MEMBERS } from '../../consts';
 
 const EditTimeEvent = () => {
   const location = useLocation();
@@ -42,13 +42,13 @@ const EditTimeEvent = () => {
 
   return (
     <div className="edit-event-container">
-      <h1>필터 수정</h1>
+      <h1>태그 수정</h1>
       {isLoading ? (
         <div>저장 중...</div>
       ) : (
         <>
           <div className="edit-event-form">
-            <h3>제목: {title}</h3>
+            <h2>{title}</h2>
             <div className="video-section">
               {videoIds.map((videoId, idx) => (
                 <div key={idx}>

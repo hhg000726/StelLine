@@ -1,23 +1,9 @@
 // src/components/ReplaylineItem.js
 import React, { useEffect, useRef, useState } from 'react';
-import './ReplaylineItem.css';
 import { useNavigate } from 'react-router-dom';
 
-const MEMBERS = ['칸나', '유니', '히나', '시로', '리제', '타비', '부키', '린', '나나', '리코'];
-
-const COLORS = [
-  '#373584',
-  '#B77DE4',
-  '#DFB387',
-  '#757875',
-  '#D94854',
-  '#50D3F0',
-  '#794EB7',
-  '#77A0F2',
-  '#FFAABA',
-  '#7AD95F',
-  '#222222',
-];
+import '../shared/Item.css';
+import { MEMBERS, COLORS } from '../../consts';
 
 const ReplaylineItem = ({ title, videoIds, refCallback, id, date, members, contents, listRef}) => {
   const itemRef = useRef(null);
@@ -62,7 +48,7 @@ const ReplaylineItem = ({ title, videoIds, refCallback, id, date, members, conte
     <div
       ref={itemRef}
     >
-      <div className="replayline-content">
+      <div className="content">
         <h1>
           {title.split('\n').map((line, index) => (
             <React.Fragment key={index}>
@@ -71,20 +57,20 @@ const ReplaylineItem = ({ title, videoIds, refCallback, id, date, members, conte
             </React.Fragment>
           ))}
         </h1>
-        <div className="members-contents-container">
-          <div className="members-display">
+        <div className="list-container">
+          <div className="display">
             <h2>멤버</h2>
-            <div className="members-list">
+            <div className="list">
               {members.map((member, index) => (
-                member === 1 && <span key={index} className="member-tag" style={{ backgroundColor: COLORS[index] }}>{MEMBERS[index]}</span>
+                member === 1 && <span key={index} className="tag" style={{ backgroundColor: COLORS[index] }}>{MEMBERS[index]}</span>
               ))}
             </div>
           </div>
-          <div className="contents-display">
+          <div className="display">
             <h2>콘텐츠</h2>
-            <div className="contents-list">
+            <div className="list">
               {Object.entries(contents).map(([content, isSelected], index) => (
-                isSelected && <span key={index} className="content-tag">{content}</span>
+                isSelected && <span key={index} className="tag">{content}</span>
               ))}
             </div>
           </div>

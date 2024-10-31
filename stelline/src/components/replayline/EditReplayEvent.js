@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import './EditReplayEvent.css';
 
-const MEMBERS = ['칸나', '유니', '히나', '시로', '리제', '타비', '부키', '린', '나나', '리코'];
-const CONTENTS = ['종합게임', '공포게임', '노래', '서버', '기념일', '내부 합방', '외부 합방', '최초 공개', '팬게임', '월드컵', '특별 컨텐츠', '대회'];
+import '../shared/Edit.css';
+import { MEMBERS, CONTENTS } from '../../consts';
 
 const EditReplayEvent = () => {
   const location = useLocation();
@@ -55,14 +54,14 @@ const EditReplayEvent = () => {
 
   return (
     <div className="edit-event-container">
-      <h1>필터 수정</h1>
+      <h1>태그 수정</h1>
       {isLoading ? (
         <div>저장 중...</div>
       ) : (
         <>
           <div className="edit-event-form">
             <div className="video-section">
-              <h3>제목: {title}</h3>
+              <h2>{title}</h2>
               {videoId && (
                 <iframe
                   width="560"
