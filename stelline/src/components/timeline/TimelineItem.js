@@ -70,16 +70,14 @@ const TimelineItem = ({ title, videoIds, refCallback, id, date, members }) => {
           {videoIds.map((videoId, idx) => (
             <div key={idx} className='video-item'>
               {isVisible ? (
-                <div>
-                  <iframe
-                    className='responsive-video-iframe'
-                    loading="lazy"
-                    src={`https://www.youtube.com/embed/${videoId}`}
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                    title={`${title} - Video ${idx + 1}`}
-                  ></iframe>
-                </div>
+                <iframe
+                  className='responsive-video-iframe'
+                  loading="lazy"
+                  src={`https://www.youtube.com/embed/${videoId}`}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  title={`${title} - Video ${idx + 1}`}
+                ></iframe>
               ) : (
                 <div className='responsive-video-iframe'
                 ></div>

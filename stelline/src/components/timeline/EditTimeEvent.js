@@ -49,20 +49,17 @@ const EditTimeEvent = () => {
         <>
           <div className="edit-event-form">
             <h2>{title}</h2>
-            <div className="video-section">
+            <div>
               {videoIds.map((videoId, idx) => (
-                <div key={idx}>
-                  <div>
-                    <iframe
-                      loading="lazy"
-                      width="560"
-                      height="315"
-                      src={`https://www.youtube.com/embed/${videoId}`}
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                      title={`${title} - Video ${idx + 1}`}
-                    ></iframe>
-                  </div>
+                <div className="video-section">
+                  <iframe
+                    className='responsive-video-iframe'
+                    loading="lazy"
+                    src={`https://www.youtube.com/embed/${videoId}`}
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    title={`${title} - Video ${idx + 1}`}
+                  ></iframe>
                 </div>
               ))}
             </div>
