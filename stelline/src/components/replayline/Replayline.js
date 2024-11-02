@@ -275,6 +275,10 @@ const Replayline = () => {
     setNavOpen((prevOpen) => !prevOpen);
   };
 
+  const handleClickToOldOrNew = () => {
+    navigate('/oldornew');
+  }
+
   const handleClickToTimeline = () => {
     navigate('/timeline');
   }
@@ -293,6 +297,11 @@ const Replayline = () => {
       <div className={`nav ${navOpen ? 'open' : 'closed'}`}>
 
         <OneClickButton
+          handler={handleClickToOldOrNew}
+          text={"게임으로"}
+        />
+
+        <OneClickButton
           handler={handleClickToTimeline}
           text={"주요 영상으로"}
         />
@@ -306,7 +315,7 @@ const Replayline = () => {
           onChange={handleSearchChange}
           style={{ width: '90%', padding: '5px', marginBottom: '10px' }}
         />
-        
+
         <ul>
           {Object.keys(groupedByYearMonthDay).map((year) => (
             <YearItem
@@ -321,7 +330,7 @@ const Replayline = () => {
             />
           ))}
         </ul>
-        
+
         <OneClickButton
           handler={handleResetFilters}
           text={'필터 초기화'}
