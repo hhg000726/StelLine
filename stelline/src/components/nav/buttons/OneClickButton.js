@@ -8,6 +8,7 @@ const OneClickButton = ({ handler, text }) => {
             position: 'sticky',
             bottom: '10px',
             width: '90%',
+            maxWidth:'300px',
             margin: '10px auto',
             padding: '12px 16px',
             backgroundColor: '#4CAF50', // 메인 색상 (초록색)

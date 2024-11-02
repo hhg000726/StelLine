@@ -91,6 +91,64 @@ app.put('/api/replayline/:id', (req, res) => {
     });
 });
 
+app.get('/api/videos', (req, res) => {
+    const { channels } = req.query;
+    const channelList = channels.split(',').map(Number);
+    const query = `SELECT * FROM replayline WHERE channel IN (?)`;
+    db.query(query, [channelList], (err, results) => {
+        if (err) {
+            console.error('Error fetching videos:', err);
+            res.status(500).send('Error fetching videos');
+            return;
+        }
+        res.json(results);
+    });
+});
+
+app.get('/api/random-video', (req, res) => {
+    const { channels } = req.query;
+    const channelList = channels.split(',').map(Number);
+    const query = `SELECT * FROM replayline WHERE channel IN (?) ORDER BY RAND() LIMIT 1`;
+    db.query(query, [channelList], (err, results) => {
+        if (err) {
+            console.error('Error fetching random video:', err);
+            res.status(500).send('Error fetching random video');
+            return;
+        }
+        res.json(results[0]);
+    });
+});
+
+// API to submit score
+app.post('/api/submit-score', (req, res) => {
+    const { username, score, channels } = req.body || {};
+    if (!username || score === undefined || !channels) {
+        return res.status(400).send('Username, score, and channels are required');
+    }
+    const query = `INSERT INTO scores (username, score, channels) VALUES (?, ?, ?)`;
+    db.query(query, [username, score, JSON.stringify(channels)], (err, results) => {
+        if (err) {
+            console.error('Error submitting score:', err);
+            res.status(500).send('Error submitting score');
+            return;
+        }
+        res.status(201).send('Score submitted successfully');
+    });
+});
+
+// API to get top 10 scores
+app.get('/api/top-scores', (req, res) => {
+    const query = `SELECT username, score, channels, created_at FROM scores ORDER BY score DESC, created_at ASC LIMIT 100`;
+    db.query(query, (err, results) => {
+        if (err) {
+            console.error('Error fetching top scores:', err);
+            res.status(500).send('Error fetching top scores');
+            return;
+        }
+        res.json(results);
+    });
+});
+
 app.listen(5000, '0.0.0.0', () => {
     console.log('Server started on port 5000');
 });

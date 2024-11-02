@@ -201,6 +201,10 @@ const Timeline = () => {
     navigate('/replayline');
   }
 
+  const handleClickToOldOrNew = () => {
+    navigate('/oldornew');
+  }
+
   const handleResetCalendar = () => {
     ResetCalendar(setExpandedYears, setExpandedMonths)
   };
@@ -215,11 +219,16 @@ const Timeline = () => {
       <div className={`nav ${navOpen ? 'open' : 'closed'}`}>
 
         <OneClickButton
+          handler={handleClickToOldOrNew}
+          text={"게임으로"}
+        />
+
+        <OneClickButton
           handler={handleClickToReplayline}
           text={"다시보기로"}
         />
 
-        <Title/>
+        <Title />
 
         <input
           type="text"
