@@ -291,7 +291,7 @@ const Timeline = () => {
             >
               {visibleDates.includes(date) && (
                 <>
-                  <h2>{date}</h2>
+                  <h1>{date}</h1>
                   {groupedEvents[date].map((event, idx) => (
                     <TimelineItem
                       key={idx}

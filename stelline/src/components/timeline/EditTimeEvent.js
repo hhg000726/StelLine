@@ -53,7 +53,7 @@ const EditTimeEvent = () => {
               {videoIds.map((videoId, idx) => (
                 <div className="video-section">
                   <iframe
-                    className='responsive-video-iframe'
+                    className='responsive-video-iframe2'
                     loading="lazy"
                     src={`https://www.youtube.com/embed/${videoId}`}
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"

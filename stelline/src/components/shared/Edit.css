@@ -102,13 +102,13 @@
   align-items: center;
   padding: 20px;
   width: 100%;
+  height: 56.25vh;
   position: relative;
   margin: 0 auto;
-  padding-top: 56.25%; /* 16:9 aspect ratio (9 / 16 = 0.5625 or 56.25%) */
   overflow: hidden;
 }
 
-.responsive-video-iframe {
+.responsive-video-iframe2 {
   position: absolute;
   top: 0;
   left: 0;
