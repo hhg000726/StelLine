@@ -22,6 +22,23 @@ db.connect((err) => {
 });
 
 // 데이터 요청을 처리하는 API 엔드포인트
+app.get('/api/games', (req, res) => {
+    const sqlQuery = 'SELECT * FROM games';
+    db.query(sqlQuery, (err, result) => {
+        if (err) throw err;
+        res.send(result);
+    });
+});
+
+app.get('/api/songs', (req, res) => {
+    const sqlQuery = 'SELECT * FROM songs';
+    db.query(sqlQuery, (err, result) => {
+        if (err) throw err;
+        res.send(result);
+    });
+});
+
+// 데이터 요청을 처리하는 API 엔드포인트
 app.get('/api/timeline', (req, res) => {
     const sqlQuery = 'SELECT * FROM timeline ORDER BY date';
     db.query(sqlQuery, (err, result) => {
@@ -67,17 +84,17 @@ app.get('/api/replayline', (req, res) => {
 // API to update the date and members of a timeline event
 app.put('/api/replayline/:id', (req, res) => {
     const eventId = req.params.id;
-    const { date, members, contents } = req.body;
+    const { date, members, contents, games, songs } = req.body;
 
     // Validate input
-    if (!date || !members || !contents) {
-        return res.status(400).json({ error: 'Date and members and contents are required.' });
+    if (!date || !members || !contents || !games || !songs) {
+        return res.status(400).json({ error: 'Date, members, contents, games and songs are required.' });
     }
 
     // Update query
-    const query = 'UPDATE replayline SET date = ?, members = ?, contents = ? WHERE id = ?';
+    const query = 'UPDATE replayline SET date = ?, members = ?, contents = ?, games = ?, songs = ? WHERE id = ?';
 
-    db.query(query, [date, JSON.stringify(members), JSON.stringify(contents), eventId], (err, result) => {
+    db.query(query, [date, JSON.stringify(members), JSON.stringify(contents), JSON.stringify(games), JSON.stringify(songs), eventId], (err, result) => {
         if (err) {
             console.error('Error updating replayline event:', err);
             return res.status(500).json({ error: 'Failed to update the replayline event.' });

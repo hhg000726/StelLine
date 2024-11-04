@@ -2,7 +2,6 @@ import MonthItemDay from "./MonthItemDay";
 import MonthItemEvent from "./MonthItemEvemt";
 
 const YearItem = ({ year, expanded, toggleYear, groupedByDate, expandedMonths, toggleMonth, handler, kind }) => {
-  console.log(expanded, year, groupedByDate[year])
   return (
     <li>
       <span onClick={() => toggleYear(year)} style={{ cursor: 'pointer', display: 'block' }}>

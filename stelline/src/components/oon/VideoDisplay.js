@@ -1,5 +1,4 @@
 import React from 'react';
-import OneClickButton from '../nav/buttons/OneClickButton';
 
 const VideoDisplay = ({ video }) => {
   if (!video) return null;

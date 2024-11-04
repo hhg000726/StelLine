@@ -13,6 +13,7 @@ import OneClickButton from '../nav/buttons/OneClickButton.js';
 import Title from '../nav/Title.js';
 import YearItem from '../nav/calendar/YearItem.js'
 import { groupedByDate, ResetCalendar, toggleExpandMonth, toggleExpandYear } from '../../utils.js';
+import ListFilter from '../nav/Filter/ListFilter.js';
 
 // Group events by date using reduce
 const groupEventsByDate = (events) => {
@@ -41,11 +42,15 @@ const Replayline = () => {
     acc[key] = false;
     return acc;
   }, {}));  // 컨텐츠 필터링용 상태
+  const [selectedGame, setSelectedGame] = useState('')
+  const [selectedSong, setSelectedSong] = useState('')
   const [expandedYears, setExpandedYears] = useState({});
   const [expandedMonths, setExpandedMonths] = useState({});
   const [filterMemberOperation, setFilterMemberOperation] = useState('AND');  // AND 또는 OR 선택('OR');  // AND 또는 OR 선택
   const [filterContentOperation, setFilterContentOperation] = useState('AND');  // AND 또는 OR 선택
   const [navOpen, setNavOpen] = useState(false); // 내비게이션 열림 상태 관리
+  const [GAMES, setGAMES] = useState([]); // 테이블에서 가져온 노래 목록
+  const [SONGS, setSONGS] = useState([]); // 테이블에서 가져온 노래 목록
 
   const [windowSize, setWindowSize] = useState({
     width: window.innerWidth,
@@ -60,6 +65,8 @@ const Replayline = () => {
     const savedSelectedContents = sessionStorage.getItem('selectedContents');
     const savedFilterMemberOperation = sessionStorage.getItem('filterMemberOperation');
     const savedFilterContentOperation = sessionStorage.getItem('filterContentOperation');
+    const savedSelectedGame = sessionStorage.getItem('selectedGame');
+    const savedSelectedSong = sessionStorage.getItem('selectedSong');
 
     if (savedSearchText) setSearchText(savedSearchText);
     if (savedSelectedMembers) setSelectedMembers(JSON.parse(savedSelectedMembers));
@@ -67,6 +74,8 @@ const Replayline = () => {
     if (savedSelectedContents) setSelectedContents(JSON.parse(savedSelectedContents));
     if (savedFilterMemberOperation) setFilterMemberOperation(savedFilterMemberOperation);
     if (savedFilterContentOperation) setFilterContentOperation(savedFilterContentOperation);
+    if (savedSelectedGame) setSelectedGame(savedSelectedGame);
+    if (savedSelectedSong) setSelectedSong(savedSelectedSong);
   }, []);
 
   useEffect(() => {
@@ -110,7 +119,9 @@ const Replayline = () => {
           ...event,
           members: JSON.parse(event.members), // JSON 문자열을 파싱하여 리스트로 변환
           videoIds: JSON.parse(event.videoIds), // videoIds도 마찬가지로 파싱
-          contents: JSON.parse(event.contents) // videoIds도 마찬가지로 파싱
+          contents: JSON.parse(event.contents), 
+          games: JSON.parse(event.games || '[]'),
+          songs: JSON.parse(event.songs || '[]')
         }));
         setEventsCopy(modifiedData); // 데이터 상태에 저장
         setIsLoading(false);
@@ -119,6 +130,27 @@ const Replayline = () => {
         console.error('Error fetching data:', error);
         setIsLoading(false);
       });
+
+    axios.get(`${process.env.REACT_APP_API_URL}/api/songs`)
+      .then(response => {
+        // 각 노래 객체에서 title만 추출하여 songTitles 배열에 저장
+        const titles = response.data.map(song => song.song_title);
+        setSONGS(titles);
+      })
+      .catch(error => {
+        console.error('Error fetching songs:', error);
+      });
+
+    axios.get(`${process.env.REACT_APP_API_URL}/api/games`)
+      .then(response => {
+        // 각 노래 객체에서 title만 추출하여 songTitles 배열에 저장
+        const titles = response.data.map(game => game.game_title);
+        setGAMES(titles);
+      })
+      .catch(error => {
+        console.error('Error fetching songs:', error);
+      });
+
   }, []);
 
   useEffect(() => {
@@ -176,7 +208,11 @@ const Replayline = () => {
       });
     }
 
-    return titleMatch && channelMatch && memberMatch && contentMatch;
+    let gameMatch = selectedGame === '' || (event.games.includes(selectedGame))
+
+    let songMatch = selectedSong === '' || (event.songs.includes(selectedSong))
+
+    return titleMatch && channelMatch && memberMatch && contentMatch && gameMatch && songMatch;
   });
 
   const groupedEvents = groupEventsByDate(filteredevents);
@@ -228,10 +264,19 @@ const Replayline = () => {
   const handleContentChange = (content) => {
     const updatedContents = { ...selectedContents }
     updatedContents[content] = !updatedContents[content];
-    console.log('Updated Contents:', updatedContents);
     setSelectedContents(updatedContents);
     sessionStorage.setItem('selectedContents', JSON.stringify(updatedContents));
   };
+
+  const handleGameChange = (game) => {
+    setSelectedGame(game);
+    sessionStorage.setItem('selectedGame', game);
+  }
+
+  const handleSongChange = (song) => {
+    setSelectedSong(song);
+    sessionStorage.setItem('selectedSong', song);
+  }
 
   const handleSearchChange = (e) => {
     setSearchText(e.target.value);
@@ -260,6 +305,8 @@ const Replayline = () => {
     }, {}));
     setFilterMemberOperation('AND')
     setFilterContentOperation('AND')
+    setSelectedGame('')
+    setSelectedSong('')
     sessionStorage.setItem('searchText', '');
     sessionStorage.setItem('selectedMembers', JSON.stringify(Array(10).fill(0)));
     sessionStorage.setItem('selectedChannels', JSON.stringify(Array(10).fill(1)));
@@ -269,6 +316,8 @@ const Replayline = () => {
     }, {})));
     sessionStorage.setItem('filterMemberOperation', 'AND');
     sessionStorage.setItem('filterContentOperation', 'AND');
+    sessionStorage.setItem('selectedGame', '')
+    sessionStorage.setItem('selectedSong', '')
   };
 
   const toggleNav = () => {
@@ -379,6 +428,24 @@ const Replayline = () => {
           />
         </div>
 
+        <div className='filter-container'>
+          <h4>게임 필터</h4>
+          <ListFilter
+            targets={GAMES}
+            handler={handleGameChange}
+            text={selectedGame}
+          />
+        </div>
+
+        <div className='filter-container'>
+          <h4>노래 필터</h4>
+          <ListFilter
+            targets={SONGS}
+            handler={handleSongChange}
+            text={selectedSong}
+          />
+        </div>
+
         <OneClickButton
           handler={handleResetCalendar}
           text={"달력 접기"}
@@ -409,6 +476,8 @@ const Replayline = () => {
                     id={event.id}
                     members={event.members}
                     contents={event.contents}
+                    games={event.games}
+                    songs={event.songs}
                     listRef={listRef}
                   />
                 ))}

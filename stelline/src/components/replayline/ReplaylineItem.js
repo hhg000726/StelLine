@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import '../shared/Item.css';
 import { MEMBERS, COLORS } from '../../consts';
 
-const ReplaylineItem = ({ title, videoIds, refCallback, id, date, members, contents, listRef}) => {
+const ReplaylineItem = ({ title, videoIds, refCallback, id, date, members, contents, games, listRef}) => {
   const itemRef = useRef(null);
   const navigate = useNavigate();
   const [isVisible, setIsVisible] = useState(false);
@@ -37,11 +37,11 @@ const ReplaylineItem = ({ title, videoIds, refCallback, id, date, members, conte
     };
   }, [refCallback]);
 
-  const handleEditReplayEvent = (eventId, eventDate, eventMembers, videoId, title, contents) => {
+  const handleEditReplayEvent = (eventId, eventDate, eventMembers, videoId, title, contents, games) => {
     // 현재 스크롤 위치 저장
     const scrollPosition = listRef.current.state.scrollOffset;
     sessionStorage.setItem('scrollPosition', scrollPosition);
-    navigate(`/edit_replay/${eventId}`, { state: { id: eventId, date: eventDate, members: eventMembers, videoId: videoId, title: title, contents: contents } });
+    navigate(`/edit_replay/${eventId}`, { state: { id: eventId, date: eventDate, members: eventMembers, videoId: videoId, title: title, contents: contents, games: games } });
   };
 
   return (
@@ -95,7 +95,7 @@ const ReplaylineItem = ({ title, videoIds, refCallback, id, date, members, conte
                 )}
               </div>
               <div>
-                <button className="edit-button" onClick={() => handleEditReplayEvent(id, date, members, videoId, title, contents)}>
+                <button className="edit-button" onClick={() => handleEditReplayEvent(id, date, members, videoId, title, contents, games)}>
                   수정
                 </button>
               </div>

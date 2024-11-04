@@ -1,0 +1,50 @@
+.filter-container {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.filter-button {
+  padding: 8px 2px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  width: 70px;
+  cursor: pointer;
+  transition: transform 0.1s ease-in-out, background-color 0.1s ease-in-out;
+}
+
+.filter-button-active {
+  transform: scale(0.95);
+}
+
+.filter-input {
+  padding: 8px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  width: 100%;
+}
+
+.dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background-color: white;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  max-height: 150px;
+  overflow-y: auto;
+  z-index: 1;
+}
+
+.dropdown-item {
+  padding: 8px;
+  cursor: pointer;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.dropdown-item:hover,
+.dropdown-item.focused {
+  background-color: #f0f0f0;
+}
